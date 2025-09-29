@@ -4,8 +4,8 @@ import {
   Mesh,
   MeshStandardMaterial,
   Vector3,
-} from "../node_modules/three/build/three.module.js";
-import { OBJLoader } from "../node_modules/three/examples/jsm/loaders/OBJLoader.js";
+} from "three";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { advanceU } from "./sampling.js";
 import { PALETTE, clamp, vec3DistanceXZ } from "./utils.js";
 import { getAsset } from "./asset-loader.js";
@@ -27,6 +27,8 @@ export class Truck {
     this.speed = config.BASE_SPEED;
     this.deliveryRadius = config.DELIVERY_RADIUS;
     this.cooldown = 0;
+    this.speedBoostActive = false;
+    this.speedTrail = null;
 
   }
 
@@ -122,6 +124,13 @@ export class Truck {
     const heading = Math.atan2(_tangent.x, _tangent.z);
     this.group.rotation.y = heading;
 
+    // Visual speed feedback
+    if (this.speedBoostActive) {
+      this.updateSpeedTrail(_pos, _tangent);
+    } else {
+      this.clearSpeedTrail();
+    }
+
 
     if (this.cooldown > 0) {
       return;
@@ -141,6 +150,34 @@ export class Truck {
 
   computeSpeed() {
     return this.baseSpeed;
+  }
+
+  updateSpeedTrail(position, tangent) {
+    if (!this.speedTrail) {
+      // Create speed trail effect
+      const trailGeometry = new BoxGeometry(0.5, 0.2, 1.5);
+      const trailMaterial = new MeshStandardMaterial({
+        color: 0xff6b35,
+        transparent: true,
+        opacity: 0.6,
+        emissive: 0x331100
+      });
+      this.speedTrail = new Mesh(trailGeometry, trailMaterial);
+      this.speedTrail.name = "SpeedTrail";
+      this.group.add(this.speedTrail);
+    }
+
+    // Position trail behind truck
+    const trailOffset = tangent.clone().multiplyScalar(-1.5);
+    this.speedTrail.position.copy(position).add(trailOffset);
+    this.speedTrail.lookAt(position.clone().add(tangent));
+  }
+
+  clearSpeedTrail() {
+    if (this.speedTrail) {
+      this.group.remove(this.speedTrail);
+      this.speedTrail = null;
+    }
   }
 }
 

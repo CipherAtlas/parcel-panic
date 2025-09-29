@@ -1,4 +1,4 @@
-import { Vector3 } from "../node_modules/three/build/three.module.js";
+import { Vector3 } from "three";
 
 const _pointA = new Vector3();
 const _pointB = new Vector3();

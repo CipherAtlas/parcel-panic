@@ -1,4 +1,4 @@
-import { OBJLoader } from "../node_modules/three/examples/jsm/loaders/OBJLoader.js";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 
 // Asset cache to store loaded models
 const assetCache = new Map();

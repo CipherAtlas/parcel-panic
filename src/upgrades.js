@@ -1,20 +1,55 @@
+import { CONFIG } from "./main.js";
+
 const UPGRADE_POOL = [
   {
     id: "tuned_engine",
     name: "Tuned Engine",
-    desc: "+10% base speed."
-      + " Trucks move faster between deliveries.",
+    getDesc: (state) => {
+      const currentSpeedMultiplier = state.truck.baseSpeed / CONFIG.BASE_SPEED;
+      let nextBoost;
+      
+      if (currentSpeedMultiplier <= 1.05) {
+        nextBoost = "5%";
+      } else if (currentSpeedMultiplier <= 1.176) { // 1.05 * 1.12
+        nextBoost = "12%";
+      } else if (currentSpeedMultiplier <= 1.3524) { // 1.176 * 1.15
+        nextBoost = "15%";
+      } else {
+        nextBoost = "20%";
+      }
+      
+      return `+${nextBoost} speed boost`;
+    },
     apply: (state) => {
-      state.truck.baseSpeed *= 1.1;
+      const currentSpeedMultiplier = state.truck.baseSpeed / CONFIG.BASE_SPEED;
+      let speedIncrease;
+      
+      if (currentSpeedMultiplier <= 1.05) {
+        speedIncrease = 1.05; // First upgrade: +5%
+      } else if (currentSpeedMultiplier <= 1.176) { // 1.05 * 1.12
+        speedIncrease = 1.12; // Second upgrade: +12%
+      } else if (currentSpeedMultiplier <= 1.3524) { // 1.176 * 1.15
+        speedIncrease = 1.15; // Third upgrade: +15%
+      } else {
+        speedIncrease = 1.20; // Fourth upgrade: +20%
+      }
+      
+      state.truck.baseSpeed *= speedIncrease;
+      
+      // Add visual speed feedback
+      state.truck.speedBoostActive = true;
+      setTimeout(() => {
+        if (state.truck) state.truck.speedBoostActive = false;
+      }, 2000);
     },
     stackable: true,
   },
   {
     id: "service_radius",
     name: "Service Radius+",
-    desc: "+10% delivery radius. Easier to hit houses.",
+    desc: "+20% delivery radius. Much easier to hit houses.",
     apply: (state) => {
-      state.truck.deliveryRadius *= 1.1;
+      state.truck.deliveryRadius *= 1.20;
     },
     stackable: true,
   },
@@ -34,13 +69,15 @@ const UPGRADE_POOL = [
   {
     id: "dispatch_optimizer",
     name: "Dispatch Optimizer",
-    desc: "Deadlines +20% longer and delivery radius +15%.",
+    desc: "Route cooldown -50%. Draw routes more frequently.",
     apply: (state) => {
-      state.config.DEADLINE_START *= 1.2;
-      state.config.DEADLINE_END *= 1.2;
-      state.truck.deliveryRadius *= 1.15;
+      // This will be handled in main.js when route cooldown is applied
+      if (!state.routeCooldownModifier) {
+        state.routeCooldownModifier = 1.0;
+      }
+      state.routeCooldownModifier *= 0.5; // Reduce cooldown by 50%
     },
-    stackable: false,
+    stackable: true,
   },
   {
     id: "time_master",
@@ -54,19 +91,22 @@ const UPGRADE_POOL = [
   {
     id: "fleet_training",
     name: "Fleet Training",
-    desc: "Base speed +10% and delivery radius +5%.",
+    desc: "RMB cooldown -60%. Add route segments more frequently.",
     apply: (state) => {
-      state.truck.baseSpeed *= 1.1;
-      state.truck.deliveryRadius *= 1.05;
+      // This will be handled in main.js when RMB cooldown is applied
+      if (!state.rmbCooldownModifier) {
+        state.rmbCooldownModifier = 1.0;
+      }
+      state.rmbCooldownModifier *= 0.4; // Reduce cooldown by 60%
     },
     stackable: true,
   },
 ];
 
-export function generateChoices(rng, takenSet = new Set(), count = 3, state = null) {
+export function generateChoices(rng, takenSet = new Set(), count = 3, gameState = null) {
   const candidates = UPGRADE_POOL.filter((card) => {
     if (!card.stackable && takenSet.has(card.id)) return false;
-    if (card.condition && state && !card.condition(state)) return false;
+    if (card.condition && gameState && !card.condition(gameState)) return false;
     return true;
   });
 

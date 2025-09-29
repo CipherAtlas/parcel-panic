@@ -1,8 +1,8 @@
 // Deviations: placeholder audio clips in assets/sfx/*.ogg are silent stubs; replace with real SFX.
 
-import { Vector3 } from "../node_modules/three/build/three.module.js";
-import Stats from "../node_modules/stats.js/build/stats.min.js";
-import GUI from "../node_modules/lil-gui/dist/lil-gui.esm.js";
+import { Vector3 } from "three";
+import Stats from "stats.js";
+import GUI from "lil-gui";
 import { initRenderer, render, getCamera, getScene, addResizeCallback, isWebGPUEnabled, getWebGPUPerformanceStats } from "./renderer.js";
 import * as input from "./input.js";
 import * as route from "./route.js";
@@ -58,6 +58,12 @@ const state = {
   fpsFrames: 0,
   fps: 0,
   paused: false,
+  pauseCooldown: 0,
+  pendingRouteCommit: null,
+  routeCooldown: 0,
+  rmbCooldown: 0,
+  routeCooldownModifier: 1.0,
+  rmbCooldownModifier: 1.0,
   settings: {
     volume: 1,
   },
@@ -202,8 +208,15 @@ function boot() {
 
   route.initRoute(getScene(), state.mapState, CONFIG);
   route.onRouteCommitted(({ curve, lut, attachInfo }) => {
-    const info = attachInfo ?? { u: 0 };
-    state.truck.attachToCurve(curve, lut, info.u ?? 0, info.point ?? null);
+    // If pause cooldown is active, queue the route commit
+    if (state.pauseCooldown > 0) {
+      console.log("[PAUSE] Queueing route commit from callback during pause cooldown");
+      state.pendingRouteCommit = { curve, lut, attachInfo };
+    } else {
+      // Immediately attach truck to route if not in pause cooldown
+      const info = attachInfo ?? { u: 0 };
+      state.truck.attachToCurve(curve, lut, info.u ?? 0, info.point ?? null);
+    }
   });
 
   input.initInput(canvas);
@@ -229,6 +242,12 @@ function newRun(seed) {
   state.runTime = 0;
   state.weekTimer = CONFIG.WEEK_SECONDS;
   state.paused = false;
+  state.pauseCooldown = 0;
+  state.pendingRouteCommit = null;
+  state.routeCooldown = 0;
+  state.rmbCooldown = 0;
+  state.routeCooldownModifier = 1.0;
+  state.rmbCooldownModifier = 1.0;
   // Don't reset speed multiplier - preserve user's choice
   state.speedMultiplier = preservedSpeed;
   state.simTimeMs = 0;
@@ -254,6 +273,51 @@ function tick(now) {
   state.lastFrameTime = now;
 
   processInput();
+
+  // Update pause cooldown
+  if (state.pauseCooldown > 0) {
+    state.pauseCooldown -= rawDt;
+    if (state.pauseCooldown <= 0) {
+      state.pauseCooldown = 0;
+      ui.setPauseCooldown(state.pauseCooldown);
+      console.log("[PAUSE] Cooldown finished, pause button ready");
+      
+      // Process any pending route commit
+      if (state.pendingRouteCommit) {
+        console.log("[PAUSE] Processing pending route commit");
+        const result = state.pendingRouteCommit;
+        state.pendingRouteCommit = null;
+        if (result) {
+          const info = result.attachInfo ?? { u: 0 };
+          state.truck.attachToCurve(result.curve, result.lut, info.u ?? 0, info.point ?? null);
+          console.log("[PAUSE] Truck attached to pending route");
+        }
+      }
+    } else {
+      ui.setPauseCooldown(state.pauseCooldown);
+    }
+  }
+
+  // Update route cooldown
+  if (state.routeCooldown > 0) {
+    state.routeCooldown -= rawDt;
+    if (state.routeCooldown <= 0) {
+      state.routeCooldown = 0;
+      ui.setRouteCooldown(state.routeCooldown);
+      console.log("[ROUTE] Route cooldown finished, can draw routes again");
+    } else {
+      ui.setRouteCooldown(state.routeCooldown);
+    }
+  }
+
+  // Update RMB cooldown
+  if (state.rmbCooldown > 0) {
+    state.rmbCooldown -= rawDt;
+    if (state.rmbCooldown <= 0) {
+      state.rmbCooldown = 0;
+      console.log("[RMB] RMB cooldown finished");
+    }
+  }
 
   const active = !state.paused && state.mode === "run";
   const simDt = active ? rawDt * state.speedMultiplier : 0;
@@ -296,6 +360,9 @@ function processInput() {
   }
   if (input.consumeKey("Enter")) {
     console.log("[KEYBOARD] Enter key pressed - attempting to commit route");
+    
+    
+    // Normal route commit
     const result = route.commitRoute(true, {
       anchor: state.truck.group.position,
       attachRadius: CONFIG.ROUTE_ATTACH_RADIUS,
@@ -303,6 +370,24 @@ function processInput() {
     if (result) {
       console.log("[OK] Route committed successfully");
       state.routeActive = false;
+      
+      // Start route cooldown after committing a route
+      const baseCooldown = 8.0; // 8 second cooldown between routes
+      const modifier = state.routeCooldownModifier || 1.0;
+      state.routeCooldown = baseCooldown * modifier;
+      ui.setRouteCooldown(state.routeCooldown);
+      console.log("[ROUTE] Started route cooldown");
+      
+      // If pause cooldown is active, queue the route commit
+      if (state.pauseCooldown > 0) {
+        console.log("[PAUSE] Queueing route commit during pause cooldown");
+        state.pendingRouteCommit = result;
+      } else {
+        // Immediately attach truck to route if not in pause cooldown
+        const info = result.attachInfo ?? { u: 0 };
+        state.truck.attachToCurve(result.curve, result.lut, info.u ?? 0, info.point ?? null);
+      }
+      
       // Play route commit sound when route is successfully committed
       console.log("[AUDIO] Playing route_commit sound (Enter key)");
       audio.play("route_commit");
@@ -378,12 +463,8 @@ function enterUpgradePhase() {
   
   // Play week complete sound when upgrade modal appears
   audio.play("week_complete");
-  state.pendingCards = generateChoices(state.rng, state.takenUpgrades, 3, {
-    truck: state.truck,
-    config: CONFIG,
-    houseManager: state.houseManager,
-  });
-  ui.showUpgradeModal(state.pendingCards, applyUpgradeCard);
+  state.pendingCards = generateChoices(state.rng, state.takenUpgrades, 3, state);
+  ui.showUpgradeModal(state.pendingCards, applyUpgradeCard, state);
   state.paused = true;
 }
 
@@ -432,35 +513,52 @@ function restartRun(seed) {
 
 function beginRouteEditing() {
   if (state.mode !== "run") return;
+  
+  // Check if route cooldown is active
+  if (state.routeCooldown > 0) {
+    console.log("[ROUTE] Cannot draw routes - cooldown active");
+    ui.showRouteCooldownMessage(state.routeCooldown);
+    return;
+  }
+  
   route.beginRouteDraw();
   state.routeActive = true;
 }
 
+
 function wireInputHandlers() {
   input.on("pointer-down", (payload) => {
-    if (payload.button !== 0 || state.mode !== "run") return;
-    beginRouteEditing();
-    const world = pointerToWorld(payload);
-    if (world) {
-      route.updateRouteDraw(world, true);
+    if (state.mode !== "run") return;
+    
+    if (payload.button === 0) {
+      // Left mouse button - start new route or continue existing
+      beginRouteEditing();
+      const world = pointerToWorld(payload);
+      if (world) {
+        route.updateRouteDraw(world, true);
+      }
     }
   });
 
   input.on("pointer-sample", (payload) => {
-    if (!state.routeActive || !payload.down) return;
+    if (!payload.down) return;
+    
     const world = pointerToWorld(payload);
     if (world) {
-      route.updateRouteDraw(world);
+      if (state.routeActive) {
+        route.updateRouteDraw(world);
+      }
     }
   });
 
   input.on("pointer-up", (payload) => {
-    if (!state.routeActive || payload.button !== 0) return;
     const world = pointerToWorld(payload);
     if (world) {
-      route.updateRouteDraw(world, true);
+      if (state.routeActive && payload.button === 0) {
+        route.updateRouteDraw(world, true);
+        route.finishRouteDraw();
+      }
     }
-    route.finishRouteDraw();
   });
 }
 
@@ -506,15 +604,35 @@ function togglePause() {
   
   console.log("[GAMEPAD] PAUSE TOGGLE - Before:", {
     paused: state.paused,
-    speedMultiplier: state.speedMultiplier
+    speedMultiplier: state.speedMultiplier,
+    pauseCooldown: state.pauseCooldown
   });
   
-  state.paused = !state.paused;
-  ui.setPauseState(state.paused);
+  // If trying to pause but cooldown is active, ignore the input
+  if (!state.paused && state.pauseCooldown > 0) {
+    console.log("[PAUSE] Ignored - cooldown active");
+    pauseOperationActive = false;
+    return;
+  }
+  
+  // If trying to pause, immediately pause
+  if (!state.paused) {
+    state.paused = true;
+    ui.setPauseState(state.paused);
+    console.log("[PAUSE] Game paused immediately");
+  } else {
+    // If unpausing, start cooldown before allowing pause again
+    state.paused = false;
+    state.pauseCooldown = 4.0; // 4 second cooldown
+    ui.setPauseState(state.paused);
+    ui.setPauseCooldown(state.pauseCooldown);
+    console.log("[PAUSE] Game unpaused, started cooldown");
+  }
   
   console.log("[GAMEPAD] PAUSE TOGGLE - After:", {
     paused: state.paused,
-    speedMultiplier: state.speedMultiplier
+    speedMultiplier: state.speedMultiplier,
+    pauseCooldown: state.pauseCooldown
   });
   
   // Clear the flag after a short delay to prevent accidental speed changes
@@ -522,6 +640,7 @@ function togglePause() {
     pauseOperationActive = false;
   }, 100);
 }
+
 
 function toggleSpeed() {
   if (pauseOperationActive) {

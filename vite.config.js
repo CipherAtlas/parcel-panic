@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 
 export default defineConfig(({ command }) => ({
-  base: command === 'build' ? './' : '/',
+  base: command === 'build' ? '/parcel-panic/' : '/',
   server: {
     open: true,
   },

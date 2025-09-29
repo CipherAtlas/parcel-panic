@@ -8,7 +8,7 @@ import {
   Plane,
   Raycaster,
   Vector3,
-} from "../node_modules/three/build/three.module.js";
+} from "three";
 import { buildCurveLUT } from "./sampling.js";
 import { optimizeRouteWithWebGPU } from "./renderer.js";
 
@@ -33,8 +33,9 @@ const state = {
   lut: null,
   length: 0,
   commitListeners: new Set(),
-  mode: "idle", // idle | drawing | ready
+  mode: "idle", // idle | drawing | ready | rmb-drawing
   drawingPoints: [],
+  rmbDrawingPoints: [],
   minSampleDist: 0.35,
   line: null,
   lineGeometry: null,
@@ -42,6 +43,7 @@ const state = {
   previewMaterial: null,
   previewGeometry: null,
   previewLine: null,
+  rmbPreviewLine: null,
 };
 
 export function initRoute(scene, mapState, config) {
@@ -69,6 +71,17 @@ export function initRoute(scene, mapState, config) {
   state.previewLine.name = "RoutePreview";
   state.previewLine.visible = false;
   scene.add(state.previewLine);
+
+  // RMB preview line
+  state.rmbPreviewGeometry = new BufferGeometry();
+  state.rmbPreviewMaterial = new LineBasicMaterial({
+    color: OPEN_COLOR,
+    linewidth: 1,
+  });
+  state.rmbPreviewLine = new Line(state.rmbPreviewGeometry, state.rmbPreviewMaterial);
+  state.rmbPreviewLine.name = "RMBRoutePreview";
+  state.rmbPreviewLine.visible = false;
+  scene.add(state.rmbPreviewLine);
 
   return state;
 }
@@ -107,6 +120,147 @@ export function updateRouteDraw(worldPoint, force = false) {
     state.drawingPoints.push(point);
     refreshPreview();
   }
+}
+
+export function beginRMBRouteDraw(startPoint) {
+  if (!state.scene) throw new Error("Route system not initialized");
+  state.mode = "rmb-drawing";
+  state.rmbDrawingPoints.length = 0;
+  state.rmbDrawingPoints.push(new Vector3(startPoint.x, 0, startPoint.z));
+  state.rmbPreviewLine.visible = true;
+  state.rmbPreviewMaterial.color.setHex(OPEN_COLOR);
+}
+
+export function updateRMBRouteDraw(worldPoint, force = false) {
+  if (state.mode !== "rmb-drawing") return;
+  if (!worldPoint) return;
+
+  const point = new Vector3(worldPoint.x, 0, worldPoint.z);
+  const last = state.rmbDrawingPoints[state.rmbDrawingPoints.length - 1];
+  const minDist = state.minSampleDist;
+
+  if (!last || force || last.distanceToSquared(point) >= minDist * minDist) {
+    if (state.rmbDrawingPoints.length >= state.config.MAX_POINTS) {
+      return;
+    }
+    state.rmbDrawingPoints.push(point);
+    refreshRMBPreview();
+  }
+}
+
+export function finishRMBRouteDraw() {
+  if (state.mode === "rmb-drawing") {
+    state.mode = "ready";
+    refreshRMBPreview();
+  }
+}
+
+export function commitRMBRoute() {
+  if (state.mode !== "ready" || state.rmbDrawingPoints.length < 2) {
+    return false;
+  }
+
+  // Check if RMB route can connect to existing route
+  const attachThreshold = 8.0;
+  let bestConnection = null;
+  let bestDistance = Infinity;
+  
+  // Find closest connection point
+  for (let i = 0; i < state.drawingPoints.length; i++) {
+    const routePoint = state.drawingPoints[i];
+    const startPoint = state.rmbDrawingPoints[0];
+    const endPoint = state.rmbDrawingPoints[state.rmbDrawingPoints.length - 1];
+    
+    const startDist = routePoint.distanceTo(startPoint);
+    const endDist = routePoint.distanceTo(endPoint);
+    
+    if (startDist < bestDistance) {
+      bestDistance = startDist;
+      bestConnection = { type: 'start', index: i, distance: startDist };
+    }
+    if (endDist < bestDistance) {
+      bestDistance = endDist;
+      bestConnection = { type: 'end', index: i, distance: endDist };
+    }
+  }
+  
+  // If close enough to existing route, integrate
+  if (bestConnection && bestConnection.distance <= attachThreshold) {
+    // Get the current route points from the existing curve
+    let existingPoints = [];
+    if (state.curve) {
+      // Sample points from the existing curve
+      const numPoints = Math.max(50, Math.floor(state.curve.getLength() * 2));
+      for (let i = 0; i <= numPoints; i++) {
+        const t = i / numPoints;
+        existingPoints.push(state.curve.getPointAt(t));
+      }
+    } else {
+      // Fallback to drawing points if no curve exists
+      existingPoints = [...state.drawingPoints];
+    }
+    
+    // Insert extension into existing route
+    let mergedPoints;
+    if (bestConnection.type === 'start') {
+      mergedPoints = [
+        ...existingPoints.slice(0, bestConnection.index),
+        ...state.rmbDrawingPoints,
+        ...existingPoints.slice(bestConnection.index)
+      ];
+    } else {
+      mergedPoints = [
+        ...existingPoints.slice(0, bestConnection.index + 1),
+        ...state.rmbDrawingPoints,
+        ...existingPoints.slice(bestConnection.index + 1)
+      ];
+    }
+    
+    // Create new curve from merged points
+    const curve = new CatmullRomCurve3(mergedPoints, true, "catmullrom", 0.12);
+    const lut = buildCurveLUT(curve, DEFAULT_RESOLUTION);
+    
+    // Update the main route
+    state.curve = curve;
+    state.lut = lut;
+    state.length = lut.length;
+    updateDisplayGeometry(curve);
+    
+    state.rmbDrawingPoints.length = 0;
+    state.rmbPreviewLine.visible = false;
+    state.mode = "idle";
+    
+    console.log(`[RMB] Route integrated at distance ${bestConnection.distance.toFixed(2)}`);
+    return true;
+  }
+  
+  console.log(`[RMB] No nearby route found (closest: ${bestDistance.toFixed(2)} > ${attachThreshold})`);
+  return false;
+}
+
+export function cancelRMBRoute() {
+  state.mode = "idle";
+  state.rmbPreviewLine.visible = false;
+  state.rmbDrawingPoints.length = 0;
+  state.previewMaterial.color.setHex(OPEN_COLOR);
+}
+
+function refreshRMBPreview() {
+  if (!state.rmbPreviewLine || state.rmbDrawingPoints.length < 2) {
+    state.rmbPreviewLine.visible = false;
+    return;
+  }
+
+  const positions = new Float32Array(state.rmbDrawingPoints.length * 3);
+  for (let i = 0; i < state.rmbDrawingPoints.length; i++) {
+    const p = state.rmbDrawingPoints[i];
+    positions[i * 3] = p.x;
+    positions[i * 3 + 1] = p.y;
+    positions[i * 3 + 2] = p.z;
+  }
+
+  state.rmbPreviewGeometry.setAttribute("position", new BufferAttribute(positions, 3));
+  state.rmbPreviewLine.visible = true;
 }
 
 export function cancelRoute() {
@@ -203,6 +357,13 @@ export function raycastToGround(camera, pointerNdc, target = _tmpVec) {
   const hit = _raycaster.ray.intersectPlane(_plane, target);
   if (!hit) return null;
   return target.set(hit.x, 0, hit.z);
+}
+
+function getClosestPointOnLineSegment(p1, p2, point) {
+  const line = _line3.set(p1, p2);
+  const closestPoint = new Vector3();
+  line.closestPointToPoint(point, true, closestPoint);
+  return closestPoint;
 }
 
 function refreshPreview() {

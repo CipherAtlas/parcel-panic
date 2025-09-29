@@ -37,13 +37,10 @@ export function initUI() {
   state.pauseIcon = document.querySelector('[data-ui=pause-icon]');
   state.speedLabel = document.querySelector('[data-ui=speed-label]');
 
-  state.hud = document.querySelector('.hud');
-  state.scoreLabel = document.querySelector('[data-ui=score]');
+  // Updated selectors for new layout
   state.weekLabel = document.querySelector('[data-ui=week]');
   state.weekTimerLabel = document.querySelector('[data-ui=week-timer]');
-  state.upgradeCountLabel = document.querySelector('[data-ui=upgrade-count]');
   state.seedLabel = document.querySelector('[data-ui=seed]');
-  state.webgpuWrap = document.querySelector('[data-ui=webgpu-wrap]');
   state.webgpuStatus = document.querySelector('[data-ui=webgpu-status]');
   state.fpsLabel = document.querySelector('[data-ui=fps]');
   state.debugWrap = document.querySelector('[data-ui=debug]');
@@ -74,6 +71,7 @@ export function initUI() {
     console.trace("Speed button click stack trace:");
     state.onSpeedPress?.();
   });
+  state.extendBtn?.addEventListener('click', () => state.onExtendPress?.());
   state.retryBtn?.addEventListener('click', () => state.onRetry?.());
   state.newRunBtn?.addEventListener('click', () => state.onNewRun?.());
   state.settingsBtn?.addEventListener('click', toggleSettings);
@@ -120,11 +118,7 @@ export function setWeekTimer(timer) {
   }
 }
 
-export function setUpgradeCount(count) {
-  if (state.upgradeCountLabel) {
-    state.upgradeCountLabel.textContent = String(count);
-  }
-}
+// Removed setUpgradeCount function
 
 export function setSeedDisplay(seed) {
   if (state.seedLabel) {
@@ -141,7 +135,7 @@ export function setFPS(fps, visible) {
   }
 }
 
-export function showUpgradeModal(cards, onSelect) {
+export function showUpgradeModal(cards, onSelect, gameState) {
   if (!state.upgradeModal || !state.upgradeCards) return;
   state.onUpgradeSelect = onSelect;
   state.currentCards = cards;
@@ -150,9 +144,13 @@ export function showUpgradeModal(cards, onSelect) {
     const el = document.createElement("button");
     el.className = "card";
     el.dataset.cardId = card.id;
+    
+    // Use dynamic description if available, otherwise use static desc
+    const description = card.getDesc ? card.getDesc(gameState) : card.desc;
+    
     el.innerHTML = `<span class="card-index">${index + 1}</span>
       <span class="card-title">${card.name}</span>
-      <span class="card-desc">${card.desc}</span>`;
+      <span class="card-desc">${description}</span>`;
     el.addEventListener("click", () => selectCard(index));
     state.upgradeCards.appendChild(el);
   });
@@ -228,6 +226,7 @@ export function bindSpeed(handler) {
   state.onSpeedPress = handler;
 }
 
+
 export function setPauseState(paused) {
   const playSymbol = String.fromCharCode(0x25B6);
   const pauseSymbol = String.fromCharCode(0x23F8);
@@ -238,6 +237,29 @@ export function setPauseState(paused) {
   }
   if (state.pauseIcon) {
     state.pauseIcon.textContent = paused ? playSymbol : pauseSymbol;
+  }
+}
+
+export function setPauseCooldown(cooldown) {
+  if (state.pauseBtn) {
+    if (cooldown > 0) {
+      const countdown = Math.ceil(cooldown);
+      state.pauseBtn.title = `Can pause in ${countdown}...`;
+      state.pauseBtn.classList.add("cooldown");
+      
+      // Show countdown on the button
+      if (state.pauseIcon) {
+        state.pauseIcon.textContent = countdown.toString();
+      }
+    } else {
+      state.pauseBtn.title = "Pause (Space)";
+      state.pauseBtn.classList.remove("cooldown");
+      
+      // Reset to pause icon
+      if (state.pauseIcon) {
+        state.pauseIcon.textContent = String.fromCharCode(0x23F8);
+      }
+    }
   }
 }
 
@@ -255,6 +277,33 @@ export function setSpeedMultiplier(multiplier) {
     state.speedBtn.classList.toggle("active", fast);
     state.speedBtn.title = fast ? "Back to 1" + symbol : "Toggle 2" + symbol + " speed";
   }
+}
+
+export function setRouteCooldown(cooldown) {
+  const routeCooldownEl = document.querySelector('[data-ui="route-cooldown"]');
+  if (routeCooldownEl) {
+    if (cooldown > 0) {
+      const countdown = Math.ceil(cooldown);
+      routeCooldownEl.textContent = `Route cooldown: ${countdown}s`;
+      routeCooldownEl.className = 'route-cooldown active';
+    } else {
+      routeCooldownEl.textContent = 'Ready to draw routes';
+      routeCooldownEl.className = 'route-cooldown';
+    }
+  }
+}
+
+
+export function showRouteCooldownMessage(cooldown) {
+  // Show a temporary message that routes are on cooldown
+  const message = document.createElement('div');
+  message.className = 'route-cooldown-message';
+  message.textContent = `Route cooldown: ${Math.ceil(cooldown)}s remaining`;
+  document.body.appendChild(message);
+  
+  setTimeout(() => {
+    message.remove();
+  }, 2000);
 }
 
 // Timer optimization UI functions

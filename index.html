@@ -23,64 +23,131 @@
 
     <canvas id="stage" title="Playfield &mdash; draw loops here for the truck to follow."></canvas>
 
-    <!-- Left Side Panels -->
-    <div class="left-panels">
-      <div class="hud" aria-label="Run overview">
-        <div class="hud-section">
-          <div class="hud-row"><span class="label">Score</span><span data-ui="score">0</span></div>
-          <div class="hud-row"><span class="label">Week</span><span data-ui="week">1</span></div>
-          <div class="hud-row"><span class="label">Time</span><span data-ui="week-timer">35</span></div>
-          <div class="hud-row"><span class="label">Upgrades</span><span data-ui="upgrade-count">0</span></div>
-          <div class="hud-row"><span class="label">Seed</span><span data-ui="seed">-</span></div>
-          <div class="hud-row webgpu-status" data-ui="webgpu-wrap">
-            <span class="label">GPU</span><span data-ui="webgpu-status">Checking...</span>
-          </div>
+    <!-- Top-Left: Stats Panel -->
+    <div class="ui-panel stats-panel">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-label">Week</span>
+          <span class="stat-value" data-ui="week">1</span>
         </div>
-        <button class="hud-button" data-action="settings" aria-label="Settings">&#9881;</button>
+        <div class="stat-item">
+          <span class="stat-label">Time</span>
+          <span class="stat-value" data-ui="week-timer">35</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Route Status</span>
+          <span class="stat-value route-cooldown" data-ui="route-cooldown">Ready to draw routes</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Seed</span>
+          <span class="stat-value" data-ui="seed">-</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">GPU</span>
+          <span class="stat-value" data-ui="webgpu-status">Checking...</span>
+        </div>
       </div>
+      <button class="settings-btn" data-action="settings" aria-label="Settings">
+        <span>⚙️</span>
+        <span>Settings</span>
+      </button>
+    </div>
 
-      <div class="tutorial-panel">
-        <h3>How to Play</h3>
-        <ul>
-          <li><strong>Draw routes:</strong> Click and drag to sketch delivery loops on the field.</li>
-          <li><strong>Commit routes:</strong> Press Enter to close the loop and start delivery.</li>
-          <li><strong>Deliver to houses:</strong> Drive near houses (cylindrical buildings) to deliver packages.</li>
-          <li><strong>Watch the timer:</strong> Houses have circular countdown rings - deliver before they expire!</li>
-          <li><strong>Controls:</strong> Space to pause, T for 2&times; speed, R to redraw, G for grid, D for debug.</li>
-        </ul>
+
+    <!-- Bottom-Left: Tutorial Panel -->
+    <div class="ui-panel tutorial-panel">
+      <div class="tutorial-header">
+        <div class="tutorial-icon">🚀</div>
+        <h3 class="tutorial-title">Quick Start</h3>
+      </div>
+      <div class="tutorial-steps">
+        <div class="tutorial-step">
+          <div class="step-number">1</div>
+          <div class="step-text"><strong>Click and drag</strong> to draw delivery routes</div>
+        </div>
+        <div class="tutorial-step">
+          <div class="step-number">2</div>
+          <div class="step-text">Press <kbd>Enter</kbd> to start delivering</div>
+        </div>
+        <div class="tutorial-step">
+          <div class="step-number">3</div>
+          <div class="step-text"><strong>Drive near houses</strong> to deliver packages</div>
+        </div>
+        <div class="tutorial-step">
+          <div class="step-number">4</div>
+          <div class="step-text">Use <kbd>Space</kbd> to pause, <kbd>T</kbd> for 2× speed</div>
+        </div>
       </div>
     </div>
 
-    <!-- Right Side Panels -->
-    <div class="right-panels">
-      <div class="control-panel" aria-label="Playback controls">
-        <button class="control-btn" data-action="pause" aria-pressed="false" title="Pause or resume (Space)">
-          <span data-ui="pause-icon">&#9208;</span>
-        </button>
-        <button class="control-btn" data-action="speed" aria-pressed="false" title="Toggle 2&times; speed">
-          <span data-ui="speed-label">1&times;</span>
-        </button>
-        <button class="control-btn social-btn" data-action="twitter" title="Follow on Twitter">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-          </svg>
-        </button>
-        <button class="control-btn social-btn" data-action="itch" title="Play on itch.io">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-17v8.586l-3.293-3.293-1.414 1.414L12 16.414l5.707-5.707-1.414-1.414L13 13.586V5h-2z"/>
-          </svg>
-        </button>
-      </div>
+    <!-- Top-Right: Control Panel -->
+    <div class="ui-panel control-panel" aria-label="Playback controls">
+      <button class="control-btn" data-action="pause" aria-pressed="false" title="Pause or resume (Space)">
+        <span data-ui="pause-icon">&#9208;</span>
+      </button>
+      <button class="control-btn" data-action="speed" aria-pressed="false" title="Toggle 2&times; speed">
+        <span data-ui="speed-label">1&times;</span>
+      </button>
+      <button class="control-btn social-btn" data-action="twitter" title="Follow on Twitter">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+        </svg>
+      </button>
+      <button class="control-btn social-btn" data-action="itch" title="Play on itch.io">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-17v8.586l-3.293-3.293-1.414 1.414L12 16.414l5.707-5.707-1.414-1.414L13 13.586V5h-2z"/>
+        </svg>
+      </button>
+    </div>
 
-      <div class="legend-panel">
-        <h3>On-Screen Guide</h3>
-        <ul>
-          <li><strong>Brown truck</strong> &mdash; your delivery vehicle following the route.</li>
-          <li><strong>Cream cylinders</strong> &mdash; houses with conical roofs; circular rings show countdown timers.</li>
-          <li><strong>Blue line</strong> &mdash; committed delivery route; orange line is your live sketch.</li>
-          <li><strong>Timer rings</strong> &mdash; shrink as time runs out (green &rarr; orange &rarr; red).</li>
-          <li><strong>HUD panel</strong> &mdash; score, week, time remaining, upgrades, and GPU status.</li>
-        </ul>
+    <!-- Bottom-Right: On-Screen Guide -->
+    <div class="ui-panel on-screen-guide">
+      <div class="guide-header">
+        <div class="guide-icon-header">👁️</div>
+        <h3 class="guide-title">Game Elements</h3>
+      </div>
+      <div class="guide-grid">
+        <div class="guide-item">
+          <div class="guide-icon">🚛</div>
+          <div class="guide-text">
+            <strong>Brown Truck</strong>
+            Your delivery vehicle
+          </div>
+        </div>
+        <div class="guide-item">
+          <div class="guide-icon">🏠</div>
+          <div class="guide-text">
+            <strong>Houses</strong>
+            <div class="house-timers">
+              <div class="timer-item">
+                <div class="timer-color" style="background: #ef4444;"></div>
+                <span class="color-red">Red</span> = Urgent (40s)
+              </div>
+              <div class="timer-item">
+                <div class="timer-color" style="background: #a855f7;"></div>
+                <span class="color-purple">Purple</span> = Medium (50s)
+              </div>
+              <div class="timer-item">
+                <div class="timer-color" style="background: #22c55e;"></div>
+                <span class="color-green">Green</span> = Normal (60s)
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="guide-item">
+          <div class="guide-icon">🔵</div>
+          <div class="guide-text">
+            <strong>Blue Lines</strong>
+            Active delivery routes
+          </div>
+        </div>
+        <div class="guide-item">
+          <div class="guide-icon">⏰</div>
+          <div class="guide-text">
+            <strong>Timer Rings</strong>
+            Shrink as time runs out
+          </div>
+        </div>
       </div>
     </div>
 

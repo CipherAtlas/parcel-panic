@@ -1,4 +1,4 @@
-import { Howl, Howler } from "../node_modules/howler/dist/howler.js";
+import { Howl, Howler } from "howler";
 
 const sounds = new Map([
   ["gameover", { src: "assets/sfx/house_expire.wav", howl: null, loop: false }],

@@ -7,7 +7,7 @@ import {
   CylinderGeometry,
   RingGeometry,
   Vector3,
-} from "../node_modules/three/build/three.module.js";
+} from "three";
 import { getRandomSpawnPoint } from "./map.js";
 import { clamp, colorLerp, lerp, smoothstep, vec3DistanceXZ, PALETTE } from "./utils.js";
 
@@ -17,15 +17,16 @@ const MIN_HOUSE_SPACING = 9;
 const SERVE_GRACE_MS = 500;
 
 export class House {
-  constructor(position, baseDeadlineMs) {
+  constructor(position, baseDeadlineMs, houseType = "normal") {
     this.position = position.clone();
     this.deadlineMaxMs = baseDeadlineMs;
     this.deadlineMs = baseDeadlineMs;
     this.active = true;
     this.warningThreshold = 0.25;
     this.lastServedAt = -Infinity;
+    this.houseType = houseType; // "normal", "medium", "urgent"
 
-    this.group = buildHouseMesh();
+    this.group = buildHouseMesh(this.houseType);
     this.group.position.copy(this.position);
     this.group.name = "House";
 
@@ -38,9 +39,27 @@ export class House {
 
   update(dt, now) {
     if (!this.active) return false;
-    this.deadlineMs -= dt * 1000;
+    
+    // Apply different timer speeds based on house type
+    const timerSpeed = this.getTimerSpeed();
+    this.deadlineMs -= dt * 1000 * timerSpeed;
+    
     this.refreshVisuals();
     return this.deadlineMs <= 0;
+  }
+
+  getTimerSpeed() {
+    // All house types use the same timer speed, differences are in base deadline
+    return 1.0;
+  }
+
+  getBaseDeadlineMultiplier() {
+    switch (this.houseType) {
+      case "normal": return 1.0;   // Base timer x
+      case "medium": return 1.0;   // Base timer x+10 (handled in deadline calculation)
+      case "urgent": return 1.0;   // Base timer x+20 (handled in deadline calculation)
+      default: return 1.0;
+    }
   }
 
   deliver(now) {
@@ -95,7 +114,7 @@ export class HouseManager {
     this.elapsed = 0;
     this.spawnTimer = config.FIRST_SPAWN_AT;
     this.spawnedCount = 0;
-    this.maxHouses = config.MAX_HOUSES || 12; // Limit total houses
+    this.maxHouses = Infinity; // No limit - endless endgame!
     this.justSpawned = false; // Track if a house was just spawned
     this.weekElapsed = 0; // Track time within current week
     this.weekNumber = 1; // Track current week
@@ -114,7 +133,7 @@ export class HouseManager {
     this.elapsed = 0;
     this.spawnTimer = this.config.FIRST_SPAWN_AT;
     this.spawnedCount = 0;
-    this.maxHouses = this.config.MAX_HOUSES || 12;
+    this.maxHouses = Infinity; // No limit - endless endgame!
     this.justSpawned = false;
     this.weekElapsed = 0;
     this.weekNumber = 1;
@@ -154,30 +173,36 @@ export class HouseManager {
   }
 
   shouldSpawnHouse() {
-    // Fixed spawn times based on week
-    if (this.weekNumber <= 5) {
-      // Weeks 1-5: 3 houses at fixed times (2s, 22s, 45s)
-      const spawnTimes = [2, 22, 45];
-      const currentTime = this.weekElapsed;
-      
-      for (let i = 0; i < spawnTimes.length; i++) {
-        if (this.housesSpawnedThisWeek === i && 
-            currentTime >= spawnTimes[i] && 
-            currentTime < spawnTimes[i] + 1) {
-          return true;
-        }
-      }
+    // Escalating house spawns for epic endgame!
+    const week = this.weekNumber;
+    const currentTime = this.weekElapsed;
+    
+    // Calculate how many houses this week should have
+    let housesThisWeek;
+    if (week <= 3) {
+      housesThisWeek = 3; // Early weeks: 3 houses
+    } else if (week <= 6) {
+      housesThisWeek = 5; // Mid weeks: 5 houses
+    } else if (week <= 10) {
+      housesThisWeek = 8; // Late weeks: 8 houses
     } else {
-      // Week 6+: 5 houses at fixed times (2s, 22s, 45s, 60s, 75s)
-      const spawnTimes = [2, 22, 45, 60, 75];
-      const currentTime = this.weekElapsed;
-      
-      for (let i = 0; i < spawnTimes.length; i++) {
-        if (this.housesSpawnedThisWeek === i && 
-            currentTime >= spawnTimes[i] && 
-            currentTime < spawnTimes[i] + 1) {
-          return true;
-        }
+      // Endgame: Escalating madness!
+      housesThisWeek = Math.min(3 + week * 2, 50); // 11 houses in week 10, 15 in week 12, etc. (max 50)
+    }
+    
+    // Generate spawn times dynamically
+    const spawnInterval = 35 / housesThisWeek; // Distribute houses across the 35-second week
+    const spawnTimes = [];
+    for (let i = 0; i < housesThisWeek; i++) {
+      spawnTimes.push(2 + (i * spawnInterval)); // Start at 2s, then distribute evenly
+    }
+    
+    // Check if it's time to spawn the next house
+    for (let i = 0; i < spawnTimes.length; i++) {
+      if (this.housesSpawnedThisWeek === i && 
+          currentTime >= spawnTimes[i] && 
+          currentTime < spawnTimes[i] + 1) {
+        return true;
       }
     }
     
@@ -185,15 +210,34 @@ export class HouseManager {
   }
 
   spawnNextHouse() {
-    const deadline = this.getDeadline();
+    const baseDeadline = this.getDeadline();
     const position = this.findSpawnPosition();
-    const house = new House(position, deadline);
+    const houseType = this.determineHouseType();
+    
+    // Calculate deadline based on house type
+    let deadline = baseDeadline;
+    switch (houseType) {
+      case "normal": deadline = baseDeadline + 20000; break;   // Base timer +20s (60s) - LONGEST
+      case "medium": deadline = baseDeadline + 10000; break;   // Base timer +10s (50s) - MIDDLE  
+      case "urgent": deadline = baseDeadline; break;           // Base timer (40s) - SHORTEST
+    }
+    
+    const house = new House(position, deadline, houseType);
     this.houses.push(house);
     this.group.add(house.group);
     this.spawnedCount += 1;
     this.housesSpawnedThisWeek += 1;
-    console.log(`[HOUSE] House spawned! Week ${this.weekNumber}, House ${this.housesSpawnedThisWeek} at ${this.weekElapsed.toFixed(1)}s`);
+    console.log(`[HOUSE] ${houseType.toUpperCase()} house spawned! Week ${this.weekNumber}, House ${this.housesSpawnedThisWeek} at ${this.weekElapsed.toFixed(1)}s (deadline: ${(deadline/1000).toFixed(1)}s)`);
     return house;
+  }
+
+  determineHouseType() {
+    // Equal distribution: 33.33% each type
+    const rand = this.rng.rand();
+    
+    if (rand < 0.3333) return "normal";    // 33.33%
+    if (rand < 0.6666) return "medium";    // 33.33%
+    return "urgent";                       // 33.34%
   }
 
   findSpawnPosition() {
@@ -235,10 +279,9 @@ export class HouseManager {
 
 
   getDeadline() {
-    const t = Math.min(this.elapsed, DIFFICULTY_TIME_CAP);
+    // Keep timers consistent - no progressive difficulty
     const start = this.config.DEADLINE_START * 1000;
-    const end = this.config.DEADLINE_END * 1000;
-    return lerp(start, end, smoothstep(0, DIFFICULTY_TIME_CAP, t));
+    return start; // Always use the starting deadline (40 seconds)
   }
 
   wasJustSpawned() {
@@ -247,20 +290,23 @@ export class HouseManager {
   }
 }
 
-function buildHouseMesh() {
+function buildHouseMesh(houseType = "normal") {
   const group = new Group();
 
   const bodyGeom = new CylinderGeometry(1.3, 1.3, 1.5, 12);
   const roofGeom = new CylinderGeometry(0, 1.45, 1.1, 12);
   const ringGeom = new RingGeometry(1.5, 1.7, RING_SEGMENTS);
 
+  // Different materials based on house type
+  const houseColors = getHouseColors(houseType);
+  
   const bodyMat = new MeshStandardMaterial({
-    color: PALETTE.houseBody,
+    color: houseColors.body,
     roughness: 0.6,
     metalness: 0.05,
   });
   const roofMat = new MeshStandardMaterial({
-    color: PALETTE.houseRoof,
+    color: houseColors.roof,
     roughness: 0.45,
     metalness: 0.1,
   });
@@ -288,4 +334,29 @@ function buildHouseMesh() {
   group.add(ring);
 
   return group;
+}
+
+function getHouseColors(houseType) {
+  switch (houseType) {
+    case "normal":
+      return {
+        body: 0x2ed573,  // Green for normal (base timer x)
+        roof: 0x20bf6b   // Darker green
+      };
+    case "medium":
+      return {
+        body: 0x9c27b0,  // Purple for medium (base timer x+10)
+        roof: 0x7b1fa2   // Darker purple
+      };
+    case "urgent":
+      return {
+        body: 0xff3838,  // Red for urgent (base timer x+20)
+        roof: 0xff2f2f   // Darker red
+      };
+    default: // fallback
+      return {
+        body: 0x2ed573,  // Default to green
+        roof: 0x20bf6b   // Default to darker green
+      };
+  }
 }

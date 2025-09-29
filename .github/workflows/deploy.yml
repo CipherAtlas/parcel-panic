@@ -36,8 +36,18 @@ jobs:
           
       - name: Copy assets
         run: |
+          mkdir -p dist/assets
           cp -r public/assets dist/assets
           echo "Assets copied successfully"
+          
+      - name: Verify build
+        run: |
+          echo "Built files:"
+          ls -la dist/
+          echo "Assets:"
+          ls -la dist/assets/
+          echo "Index.html content:"
+          head -10 dist/index.html
           
       - name: Setup Pages
         uses: actions/configure-pages@v4

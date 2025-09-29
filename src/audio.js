@@ -18,7 +18,7 @@ export function initAudio(settings = {}) {
   globalVolume = settings.volume ?? 1;
   if (typeof Howler !== "undefined") {
     Howler.volume(globalVolume);
-    console.log("🔊 Preloading all audio assets...");
+    console.log("[AUDIO] Preloading all audio assets...");
     
     // Preload all sounds with immediate loading
     for (const [name, data] of sounds) {
@@ -29,10 +29,10 @@ export function initAudio(settings = {}) {
         preload: true,
         html5: false, // Use Web Audio API for better performance
         onload: () => {
-          console.log(`✅ Audio loaded: ${name}`);
+          console.log(`[OK] Audio loaded: ${name}`);
         },
         onloaderror: (id, error) => {
-          console.warn(`❌ Audio load error for ${name}:`, error);
+          console.warn(`[FAIL] Audio load error for ${name}:`, error);
         }
       });
     }
@@ -44,7 +44,7 @@ export function initAudio(settings = {}) {
       }
     }
     
-    console.log("🔊 All audio assets preloaded");
+    console.log("[AUDIO] All audio assets preloaded");
   } else if (typeof window !== "undefined" && window.AudioContext) {
     fallbackContext = new AudioContext();
     preloadFallbackBuffers().catch((err) => console.warn("Audio preload failed", err));
@@ -63,18 +63,18 @@ export function setVolume(volume) {
 }
 
 export function play(name) {
-  console.log(`🔊 Audio.play called for: ${name}`);
+  console.log(`[AUDIO] Audio.play called for: ${name}`);
   const data = sounds.get(name);
   if (!data) {
-    console.warn(`❌ Sound "${name}" not found in sounds map`);
+    console.warn(`[FAIL] Sound "${name}" not found in sounds map`);
     return;
   }
   if (data.howl) {
-    console.log(`✅ Playing sound: ${name} with Howl`);
+    console.log(`[OK] Playing sound: ${name} with Howl`);
     data.howl.volume(globalVolume);
     data.howl.play();
   } else {
-    console.log(`⚠️ Using fallback for sound: ${name}`);
+    console.log(`[WARN] Using fallback for sound: ${name}`);
     playFallback(name, false);
   }
 }
@@ -158,7 +158,7 @@ let bgMusicVolume = 0.3; // Default background music volume
 
 export function setBackgroundMusicVolume(volume) {
   bgMusicVolume = Math.max(0, Math.min(1, volume));
-  console.log(`🎵 Background music volume set to: ${bgMusicVolume}`);
+  console.log(`[MUSIC] Background music volume set to: ${bgMusicVolume}`);
   
   // Update volume if background music is currently playing
   if (typeof Howler !== "undefined") {
@@ -170,12 +170,12 @@ export function setBackgroundMusicVolume(volume) {
 }
 
 export function startBackgroundMusic() {
-  console.log("🎵 Starting background music...");
+  console.log("[MUSIC] Starting background music...");
   play("bg_music", bgMusicVolume); // Use the background music volume setting
 }
 
 export function stopBackgroundMusic() {
-  console.log("🎵 Stopping background music...");
+  console.log("[MUSIC] Stopping background music...");
   if (typeof Howler !== "undefined") {
     const bgMusic = sounds.get("bg_music");
     if (bgMusic && bgMusic.howl) {

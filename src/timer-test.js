@@ -11,7 +11,7 @@ export class TimerTest {
   }
 
   async runAllTests() {
-    console.log('🧪 Starting Timer Optimization Tests...');
+    console.log('[TEST] Starting Timer Optimization Tests...');
     
     const tests = [
       { name: 'Basic Timer Configuration', fn: this.testBasicConfiguration },
@@ -25,15 +25,15 @@ export class TimerTest {
 
     for (const test of tests) {
       try {
-        console.log(`⏳ Running ${test.name}...`);
+        console.log(`[WAIT] Running ${test.name}...`);
         const result = await test.fn.call(this);
         this.testResults[test.name] = result;
-        console.log(`✅ ${test.name}: ${result.success ? 'PASSED' : 'FAILED'}`);
+        console.log(`[OK] ${test.name}: ${result.success ? 'PASSED' : 'FAILED'}`);
         if (!result.success && result.error) {
           console.log(`   Error: ${result.error}`);
         }
       } catch (error) {
-        console.error(`❌ ${test.name}: ERROR -`, error.message);
+        console.error(`[FAIL] ${test.name}: ERROR -`, error.message);
         this.testResults[test.name] = { success: false, error: error.message };
       }
     }
@@ -298,17 +298,17 @@ export class TimerTest {
   }
 
   printSummary() {
-    console.log('\n📊 Timer Optimization Test Results:');
+    console.log('\n[STATS] Timer Optimization Test Results:');
     console.log('=====================================');
     
     const passed = Object.values(this.testResults).filter(r => r.success).length;
     const total = Object.keys(this.testResults).length;
     
-    console.log(`✅ Passed: ${passed}/${total}`);
-    console.log(`❌ Failed: ${total - passed}/${total}`);
+    console.log(`[OK] Passed: ${passed}/${total}`);
+    console.log(`[FAIL] Failed: ${total - passed}/${total}`);
     
     for (const [testName, result] of Object.entries(this.testResults)) {
-      const status = result.success ? '✅' : '❌';
+      const status = result.success ? '[OK]' : '[FAIL]';
       console.log(`${status} ${testName}: ${result.success ? 'PASSED' : 'FAILED'}`);
       
       if (!result.success && result.error) {
@@ -317,9 +317,9 @@ export class TimerTest {
     }
     
     if (passed === total) {
-      console.log('\n🎉 All timer optimization tests passed! The system is ready for playable gameplay.');
+      console.log('\n[SUCCESS] All timer optimization tests passed! The system is ready for playable gameplay.');
     } else {
-      console.log('\n⚠️  Some tests failed. Timer optimization may need adjustments.');
+      console.log('\n[WARN]  Some tests failed. Timer optimization may need adjustments.');
     }
   }
 
@@ -332,7 +332,7 @@ export class TimerTest {
 
 // Auto-run test if in development mode
 if (import.meta.env?.DEV) {
-  console.log('🔧 Development mode detected, running timer optimization tests...');
+  console.log('[TOOLS] Development mode detected, running timer optimization tests...');
   TimerTest.quickTest().catch(console.error);
 }
 

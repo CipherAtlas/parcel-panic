@@ -5,7 +5,7 @@ const assetCache = new Map();
 
 // Preload all game assets
 export async function preloadAssets() {
-  console.log("🎨 Starting asset preloading...");
+  console.log("[ASSETS] Starting asset preloading...");
   
   const assets = [
     { name: 'truck', path: 'assets/models/truck.obj' },
@@ -17,10 +17,10 @@ export async function preloadAssets() {
   
   try {
     const results = await Promise.all(loadPromises);
-    console.log("✅ All assets preloaded successfully");
+    console.log("[OK] All assets preloaded successfully");
     return results;
   } catch (error) {
-    console.warn("⚠️ Some assets failed to load:", error);
+    console.warn("[WARN] Some assets failed to load:", error);
     return [];
   }
 }
@@ -33,7 +33,7 @@ function loadAsset(loader, asset) {
       (object) => {
         // Store in cache
         assetCache.set(asset.name, object);
-        console.log(`✅ ${asset.name} asset loaded`);
+        console.log(`[OK] ${asset.name} asset loaded`);
         resolve({ name: asset.name, object, success: true });
       },
       (progress) => {
@@ -41,7 +41,7 @@ function loadAsset(loader, asset) {
         console.log(`Loading ${asset.name}: ${percent}%`);
       },
       (error) => {
-        console.warn(`❌ Failed to load ${asset.name}:`, error);
+        console.warn(`[FAIL] Failed to load ${asset.name}:`, error);
         resolve({ name: asset.name, object: null, success: false });
       }
     );

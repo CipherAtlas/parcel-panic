@@ -28,11 +28,6 @@ jobs:
       env:
         NODE_ENV: production
         
-    - name: Copy assets
-      run: |
-        cp -r assets dist/assets
-        echo "Assets copied successfully"
-        
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       if: github.ref == 'refs/heads/main'

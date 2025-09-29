@@ -126,7 +126,7 @@ export class HouseManager {
     this.weekElapsed = 0;
     this.weekNumber += 1;
     this.housesSpawnedThisWeek = 0;
-    console.log(`🏠 Week ${this.weekNumber} started - resetting house spawns`);
+    console.log(`[HOUSE] Week ${this.weekNumber} started - resetting house spawns`);
   }
 
   update(dt, now) {
@@ -192,7 +192,7 @@ export class HouseManager {
     this.group.add(house.group);
     this.spawnedCount += 1;
     this.housesSpawnedThisWeek += 1;
-    console.log(`🏠 House spawned! Week ${this.weekNumber}, House ${this.housesSpawnedThisWeek} at ${this.weekElapsed.toFixed(1)}s`);
+    console.log(`[HOUSE] House spawned! Week ${this.weekNumber}, House ${this.housesSpawnedThisWeek} at ${this.weekElapsed.toFixed(1)}s`);
     return house;
   }
 

@@ -65,7 +65,7 @@ export function initUI() {
 
   state.pauseBtn?.addEventListener('click', () => state.onPausePress?.());
   state.speedBtn?.addEventListener('click', (event) => {
-    console.log("🚨 SPEED BUTTON CLICKED!", {
+    console.log("[ALERT] SPEED BUTTON CLICKED!", {
       event: event.type,
       isTrusted: event.isTrusted,
       target: event.target,
@@ -242,7 +242,7 @@ export function setPauseState(paused) {
 }
 
 export function setSpeedMultiplier(multiplier) {
-  console.log("🎛️ UI setSpeedMultiplier called with:", multiplier);
+  console.log("[UI] UI setSpeedMultiplier called with:", multiplier);
   console.trace("Stack trace:");
   
   const symbol = String.fromCharCode(0x00D7);

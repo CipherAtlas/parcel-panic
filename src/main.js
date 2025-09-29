@@ -190,7 +190,7 @@ function boot() {
   };
   ui.setSettings(state.settings, handleVolumeChange, handleBackgroundMusicVolumeChange);
   audio.initAudio(state.settings);
-  console.log("🔊 Audio system initialized");
+  console.log("[AUDIO] Audio system initialized");
   
   // Start background music after audio system is initialized
   audio.startBackgroundMusic();
@@ -218,7 +218,7 @@ function boot() {
 }
 
 function newRun(seed) {
-  console.log("🔄 NEW RUN CALLED - Preserving speed:", state.speedMultiplier);
+  console.log("[RESTART] NEW RUN CALLED - Preserving speed:", state.speedMultiplier);
   const preservedSpeed = state.speedMultiplier; // Preserve current speed
   
   state.seed = seed;
@@ -295,19 +295,19 @@ function processInput() {
     if (input.consumeKey("Digit3")) ui.selectCard(2);
   }
   if (input.consumeKey("Enter")) {
-    console.log("⌨️ Enter key pressed - attempting to commit route");
+    console.log("[KEYBOARD] Enter key pressed - attempting to commit route");
     const result = route.commitRoute(true, {
       anchor: state.truck.group.position,
       attachRadius: CONFIG.ROUTE_ATTACH_RADIUS,
     });
     if (result) {
-      console.log("✅ Route committed successfully");
+      console.log("[OK] Route committed successfully");
       state.routeActive = false;
       // Play route commit sound when route is successfully committed
-      console.log("🔊 Playing route_commit sound (Enter key)");
+      console.log("[AUDIO] Playing route_commit sound (Enter key)");
       audio.play("route_commit");
     } else {
-      console.log("❌ Route commit failed - route cancelled");
+      console.log("[FAIL] Route commit failed - route cancelled");
       route.cancelRoute();
       state.routeActive = false;
     }
@@ -345,7 +345,7 @@ function updateSimulation(dt, now) {
 
   // Check if a house was just spawned and play sound
   if (state.houseManager.wasJustSpawned()) {
-    console.log("🔊 Playing house_spawn sound");
+    console.log("[AUDIO] Playing house_spawn sound");
     audio.play("house_spawn");
   }
 
@@ -504,7 +504,7 @@ function togglePause() {
   
   pauseOperationActive = true;
   
-  console.log("🎮 PAUSE TOGGLE - Before:", {
+  console.log("[GAMEPAD] PAUSE TOGGLE - Before:", {
     paused: state.paused,
     speedMultiplier: state.speedMultiplier
   });
@@ -512,7 +512,7 @@ function togglePause() {
   state.paused = !state.paused;
   ui.setPauseState(state.paused);
   
-  console.log("🎮 PAUSE TOGGLE - After:", {
+  console.log("[GAMEPAD] PAUSE TOGGLE - After:", {
     paused: state.paused,
     speedMultiplier: state.speedMultiplier
   });
@@ -525,7 +525,7 @@ function togglePause() {
 
 function toggleSpeed() {
   if (pauseOperationActive) {
-    console.log("🛡️ BLOCKED SPEED CHANGE - Pause operation in progress");
+    console.log("[BLOCKED] BLOCKED SPEED CHANGE - Pause operation in progress");
     return;
   }
   
@@ -535,7 +535,7 @@ function toggleSpeed() {
   // Persist speed setting
   localStorage.setItem('parcelPanicSpeedMultiplier', state.speedMultiplier.toString());
   
-  console.log("⚡ SPEED TOGGLE:", {
+  console.log("[SPEED] SPEED TOGGLE:", {
     from: oldSpeed,
     to: state.speedMultiplier
   });
@@ -630,12 +630,12 @@ function initializeWebGPUStatus() {
   setTimeout(() => {
     if (isWebGPUEnabled()) {
       ui.setWebGPUStatus('enabled');
-      console.log('✅ WebGPU is active - enhanced performance available');
+      console.log('[OK] WebGPU is active - enhanced performance available');
     } else {
       // Always show WebGL fallback for integrated graphics
       ui.setWebGPUStatus('disabled');
-      console.log('⚠️ WebGPU not available - using WebGL fallback');
-      console.log('💡 WebGPU requires a dedicated GPU (NVIDIA/AMD graphics card)');
+      console.log('[WARN] WebGPU not available - using WebGL fallback');
+      console.log('[TIP] WebGPU requires a dedicated GPU (NVIDIA/AMD graphics card)');
     }
   }, 1000);
 }

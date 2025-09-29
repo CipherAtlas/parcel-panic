@@ -41,7 +41,7 @@ export class Truck {
       truckModel.position.set(0, 0, 0);
       this.applyTruckMaterials(truckModel);
       this.group.add(truckModel);
-      console.log('✅ Truck model loaded from cache');
+      console.log('[OK] Truck model loaded from cache');
     } else {
       // Fallback to loading from file if not preloaded
       const loader = new OBJLoader();
@@ -53,13 +53,13 @@ export class Truck {
           object.position.set(0, 0, 0);
           this.applyTruckMaterials(object);
           this.group.add(object);
-          console.log('✅ Truck model loaded from file');
+          console.log('[OK] Truck model loaded from file');
         },
         (progress) => {
           console.log('Loading truck model:', (progress.loaded / progress.total * 100) + '%');
         },
         (error) => {
-          console.error('❌ Error loading truck model:', error);
+          console.error('[FAIL] Error loading truck model:', error);
           // Fallback to generated mesh if OBJ fails
           this.group.add(buildTruckMesh());
         }

@@ -42,7 +42,7 @@ export class WebGPUIntegration {
       // Check WebGPU support
       if (!navigator.gpu) {
         console.warn('WebGPU not supported, falling back to Three.js');
-        console.log('💡 To enable WebGPU: Go to chrome://flags/ and enable "Unsafe WebGPU"');
+        console.log('[TIP] To enable WebGPU: Go to chrome://flags/ and enable "Unsafe WebGPU"');
         this.fallbackMode = true;
         return false;
       }
@@ -52,13 +52,13 @@ export class WebGPUIntegration {
         const adapter = await navigator.gpu.requestAdapter();
         if (!adapter) {
           console.warn('WebGPU adapter not available, falling back to Three.js');
-          console.log('💡 To enable WebGPU: Go to chrome://flags/ and enable "Unsafe WebGPU"');
+          console.log('[TIP] To enable WebGPU: Go to chrome://flags/ and enable "Unsafe WebGPU"');
           this.fallbackMode = true;
           return false;
         }
       } catch (error) {
         console.warn('WebGPU adapter request failed:', error);
-        console.log('💡 To enable WebGPU: Go to chrome://flags/ and enable "Unsafe WebGPU"');
+        console.log('[TIP] To enable WebGPU: Go to chrome://flags/ and enable "Unsafe WebGPU"');
         this.fallbackMode = true;
         return false;
       }

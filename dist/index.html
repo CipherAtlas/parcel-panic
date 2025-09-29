@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Parcel Panic</title>
-    <script async type="module" crossorigin src="/parcel-panic/assets/index-CId52rZS.js"></script>
+    <title>Parcel Panic</title>
+    <script type="module" crossorigin src="/parcel-panic/assets/index-BB6VC_Bs.js"></script>
   </head>
   <body>
     <!-- Loading Screen -->
@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <canvas id="stage" title="Playfield — draw loops here for the truck to follow."></canvas>
+    <canvas id="stage" title="Playfield &mdash; draw loops here for the truck to follow."></canvas>
 
     <!-- Left Side Panels -->
     <div class="left-panels">
@@ -36,7 +36,7 @@
             <span class="label">GPU</span><span data-ui="webgpu-status">Checking...</span>
           </div>
         </div>
-        <button class="hud-button" data-action="settings" aria-label="Settings">⚙</button>
+        <button class="hud-button" data-action="settings" aria-label="Settings">&#9881;</button>
       </div>
 
       <div class="tutorial-panel">
@@ -46,7 +46,7 @@
           <li><strong>Commit routes:</strong> Press Enter to close the loop and start delivery.</li>
           <li><strong>Deliver to houses:</strong> Drive near houses (cylindrical buildings) to deliver packages.</li>
           <li><strong>Watch the timer:</strong> Houses have circular countdown rings - deliver before they expire!</li>
-          <li><strong>Controls:</strong> Space to pause, T for 2× speed, R to redraw, G for grid, D for debug.</li>
+          <li><strong>Controls:</strong> Space to pause, T for 2&times; speed, R to redraw, G for grid, D for debug.</li>
         </ul>
       </div>
     </div>
@@ -55,10 +55,10 @@
     <div class="right-panels">
       <div class="control-panel" aria-label="Playback controls">
         <button class="control-btn" data-action="pause" aria-pressed="false" title="Pause or resume (Space)">
-          <span data-ui="pause-icon">⏸</span>
+          <span data-ui="pause-icon">&#9208;</span>
         </button>
-        <button class="control-btn" data-action="speed" aria-pressed="false" title="Toggle 2× speed">
-          <span data-ui="speed-label">1×</span>
+        <button class="control-btn" data-action="speed" aria-pressed="false" title="Toggle 2&times; speed">
+          <span data-ui="speed-label">1&times;</span>
         </button>
         <button class="control-btn social-btn" data-action="twitter" title="Follow on Twitter">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -75,11 +75,11 @@
       <div class="legend-panel">
         <h3>On-Screen Guide</h3>
         <ul>
-          <li><strong>Brown truck</strong> — your delivery vehicle following the route.</li>
-          <li><strong>Cream cylinders</strong> — houses with conical roofs; circular rings show countdown timers.</li>
-          <li><strong>Blue line</strong> — committed delivery route; orange line is your live sketch.</li>
-          <li><strong>Timer rings</strong> — shrink as time runs out (green → orange → red).</li>
-          <li><strong>HUD panel</strong> — score, week, time remaining, upgrades, and GPU status.</li>
+          <li><strong>Brown truck</strong> &mdash; your delivery vehicle following the route.</li>
+          <li><strong>Cream cylinders</strong> &mdash; houses with conical roofs; circular rings show countdown timers.</li>
+          <li><strong>Blue line</strong> &mdash; committed delivery route; orange line is your live sketch.</li>
+          <li><strong>Timer rings</strong> &mdash; shrink as time runs out (green &rarr; orange &rarr; red).</li>
+          <li><strong>HUD panel</strong> &mdash; score, week, time remaining, upgrades, and GPU status.</li>
         </ul>
       </div>
     </div>
@@ -117,9 +117,6 @@
           <button class="btn" data-action="new-seed">New Run</button>
         </div>
       </div>
-    </div>
-
-    <!-- Load the bundled script without type="module" -->
-    <script src="assets/index-DFaGLTw3.js"></script>
+    </div>
   </body>
 </html>

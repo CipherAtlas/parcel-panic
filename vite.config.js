@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 
-export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? '/parcel-panic/' : '/',
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? '/parcel-panic/' : '/',
   server: {
     open: true,
   },
@@ -30,5 +30,5 @@ export default defineConfig({
   esbuild: {
     target: "es2020"
   }
-});
+}));
 

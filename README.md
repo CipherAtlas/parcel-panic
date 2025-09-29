@@ -2,7 +2,7 @@
 
 A fast-paced delivery game where you draw routes for your truck to follow and deliver packages to houses before they expire!
 
-## 🎮 How to Play
+## How to Play
 
 - **Draw routes:** Click and drag to sketch delivery loops on the field
 - **Commit routes:** Press Enter to close the loop and start delivery
@@ -10,7 +10,7 @@ A fast-paced delivery game where you draw routes for your truck to follow and de
 - **Watch the timer:** Houses have circular countdown rings - deliver before they expire!
 - **Controls:** Space to pause, T for 2× speed, R to redraw, G for grid, D for debug
 
-## 🚀 Play the Game
+## Play the Game
 
 [**Play Parcel Panic on GitHub Pages**](https://cipheratlas.github.io/parcel-panic/)
 
@@ -31,7 +31,7 @@ npm run dev
 npm run build
 ```
 
-## 🎯 Features
+## Features
 
 - **WebGPU Rendering** with WebGL fallback
 - **Procedural Route Drawing** - draw custom delivery paths
@@ -41,7 +41,7 @@ npm run build
 - **Responsive UI** with mobile support
 - **Loading Screen** with progress tracking
 
-## 🎨 Visual Design
+## Visual Design
 
 - **Cosy Winter Jazz Theme** - warm, relaxing colors
 - **Cylindrical Houses** with conical roofs and timer rings
@@ -49,28 +49,28 @@ npm run build
 - **Circular Progress Timers** around each house
 - **Modern UI** with clean, accessible design
 
-## 🎵 Audio
+## Audio
 
 - Background music with volume control
 - Route commit sounds
 - House spawn/expire audio
 - Week completion fanfare
 
-## 🏗️ Technical Stack
+## Technical Stack
 
 - **Three.js** - 3D graphics and WebGPU/WebGL rendering
 - **Vite** - Build tool and development server
 - **Howler.js** - Audio management
 - **Vanilla JavaScript** - No frameworks, pure performance
 
-## 📱 Browser Support
+## Browser Support
 
 - Chrome/Edge (recommended for WebGPU)
 - Firefox (WebGL fallback)
 - Safari (WebGL fallback)
 - Mobile browsers supported
 
-## 🚀 Deployment
+## Deployment
 
 This project is automatically deployed to GitHub Pages using GitHub Actions. The build process:
 
@@ -78,7 +78,7 @@ This project is automatically deployed to GitHub Pages using GitHub Actions. The
 2. Builds the project with Vite
 3. Deploys to GitHub Pages
 
-## 🎮 Game Mechanics
+## Game Mechanics
 
 - **Week System:** Complete deliveries within time limits
 - **House Spawning:** 3 houses per week (weeks 1-5), then 5 houses (week 6+)
@@ -86,7 +86,7 @@ This project is automatically deployed to GitHub Pages using GitHub Actions. The
 - **Route Optimization:** Draw efficient paths to maximize deliveries
 - **Upgrade Progression:** Unlock new abilities and improvements
 
-## 🎯 Scoring
+## Scoring
 
 - Points for successful deliveries
 - Time bonuses for quick completions
@@ -97,4 +97,3 @@ This project is automatically deployed to GitHub Pages using GitHub Actions. The
 
 **Made with ❤️ for the web gaming community**
 
-## test test

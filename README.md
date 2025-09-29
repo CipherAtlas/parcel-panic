@@ -12,7 +12,7 @@ A fast-paced delivery game where you draw routes for your truck to follow and de
 
 ## 🚀 Play the Game
 
-[**Play Parcel Panic on GitHub Pages**](https://yourusername.github.io/parcel-panic/)
+[**Play Parcel Panic on GitHub Pages**](https://cipheratlas.github.io/parcel-panic/)
 
 ## 🛠️ Development
 

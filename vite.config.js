@@ -26,7 +26,6 @@ export default defineConfig({
     ],
   },
   assetsInclude: ["**/*.ogg", "**/*.wav", "**/*.mp3", "**/*.obj"],
-  publicDir: "assets",
   esbuild: {
     target: "es2020"
   }

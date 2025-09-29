@@ -1,4 +1,4 @@
-import { Vector3, Color } from "three";
+import { Vector3, Color } from "../node_modules/three/build/three.module.js";
 
 const _tmpVecA = new Vector3();
 const _tmpVecB = new Vector3();

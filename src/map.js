@@ -7,7 +7,7 @@ import {
   PlaneGeometry,
   BufferGeometry,
   Float32BufferAttribute,
-} from "three";
+} from "../node_modules/three/build/three.module.js";
 import { PALETTE } from "./utils.js";
 
 export function initMap(scene, rng, config) {

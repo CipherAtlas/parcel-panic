@@ -4,8 +4,8 @@ import {
   Mesh,
   MeshStandardMaterial,
   Vector3,
-} from "three";
-import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
+} from "../node_modules/three/build/three.module.js";
+import { OBJLoader } from "../node_modules/three/examples/jsm/loaders/OBJLoader.js";
 import { advanceU } from "./sampling.js";
 import { PALETTE, clamp, vec3DistanceXZ } from "./utils.js";
 import { getAsset } from "./asset-loader.js";

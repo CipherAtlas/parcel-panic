@@ -8,7 +8,7 @@ import {
   Plane,
   Raycaster,
   Vector3,
-} from "three";
+} from "../node_modules/three/build/three.module.js";
 import { buildCurveLUT } from "./sampling.js";
 import { optimizeRouteWithWebGPU } from "./renderer.js";
 

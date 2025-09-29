@@ -7,7 +7,7 @@ import {
   SRGBColorSpace,
   Vector3,
   WebGLRenderer,
-} from "three";
+} from "../node_modules/three/build/three.module.js";
 import { PALETTE } from "./utils.js";
 import { WebGPUIntegration } from "./webgpu/webgpu-integration.js";
 

@@ -7,7 +7,7 @@ import {
   CylinderGeometry,
   RingGeometry,
   Vector3,
-} from "three";
+} from "../node_modules/three/build/three.module.js";
 import { getRandomSpawnPoint } from "./map.js";
 import { clamp, colorLerp, lerp, smoothstep, vec3DistanceXZ, PALETTE } from "./utils.js";
 

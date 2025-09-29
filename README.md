@@ -1,5 +1,8 @@
 # Parcel Panic
 
+
+![Alt text](1.png)
+
 A fast-paced delivery game where you draw routes for your truck to follow and deliver packages to houses before they expire!
 
 ## How to Play

@@ -1,0 +1,28 @@
+# Force correct MIME types for itch.io HTML5 hosting
+AddType application/javascript .js
+AddType text/css .css
+AddType audio/mpeg .mp3
+AddType audio/wav .wav
+AddType audio/ogg .ogg
+AddType model/obj .obj
+AddType text/plain .txt
+AddType application/json .json
+
+# Force specific MIME types for problematic files
+<FilesMatch "\.js$">
+  ForceType application/javascript
+</FilesMatch>
+
+<FilesMatch "\.css$">
+  ForceType text/css
+</FilesMatch>
+
+# Enable CORS for local assets
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type"
+
+# Cache static assets
+<FilesMatch "\.(js|css|wav|mp3|ogg|obj)$">
+  Header set Cache-Control "public, max-age=31536000"
+</FilesMatch>

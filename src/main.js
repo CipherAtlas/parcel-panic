@@ -1,7 +1,7 @@
 // Deviations: placeholder audio clips in assets/sfx/*.ogg are silent stubs; replace with real SFX.
 
 import { Vector3 } from "../node_modules/three/build/three.module.js";
-import Stats from "../node_modules/stats.js/src/Stats.js";
+import Stats from "../node_modules/stats.js/build/stats.min.js";
 import GUI from "../node_modules/lil-gui/dist/lil-gui.esm.js";
 import { initRenderer, render, getCamera, getScene, addResizeCallback, isWebGPUEnabled, getWebGPUPerformanceStats } from "./renderer.js";
 import * as input from "./input.js";

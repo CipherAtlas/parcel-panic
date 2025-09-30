@@ -26,9 +26,7 @@ export class Truck {
     this.baseSpeed = config.BASE_SPEED;
     this.speed = config.BASE_SPEED;
     this.deliveryRadius = config.DELIVERY_RADIUS;
-    this.cooldown = 0;
     this.speedBoostActive = false;
-    this.speedTrail = null;
 
   }
 
@@ -112,11 +110,8 @@ export class Truck {
     const effectiveSpeed = this.computeSpeed();
     const moveDist = effectiveSpeed * dt;
 
-    if (this.cooldown > 0) {
-      this.cooldown -= dt;
-    } else {
-      this.u = advanceU(this.lut, this.u, moveDist);
-    }
+    // Always move the truck along the route
+    this.u = advanceU(this.lut, this.u, moveDist);
 
     this.curve.getPointAt(this.u, _pos);
     this.curve.getTangentAt(this.u, _tangent);
@@ -124,24 +119,14 @@ export class Truck {
     const heading = Math.atan2(_tangent.x, _tangent.z);
     this.group.rotation.y = heading;
 
-    // Visual speed feedback
-    if (this.speedBoostActive) {
-      this.updateSpeedTrail(_pos, _tangent);
-    } else {
-      this.clearSpeedTrail();
-    }
+    // Visual speed feedback removed
 
-
-    if (this.cooldown > 0) {
-      return;
-    }
-
+    // Check for deliveries (houses have their own cooldown system)
     for (const house of houses) {
       if (!house.active) continue;
       if (typeof house.isServedRecently === "function" && house.isServedRecently(now)) continue;
       const dist = vec3DistanceXZ(this.group.position, house.position);
       if (dist <= this.deliveryRadius) {
-        this.cooldown = 0.25; // 250ms cooldown
         onDeliver(house, now);
         break;
       }
@@ -152,33 +137,6 @@ export class Truck {
     return this.baseSpeed;
   }
 
-  updateSpeedTrail(position, tangent) {
-    if (!this.speedTrail) {
-      // Create speed trail effect
-      const trailGeometry = new BoxGeometry(0.5, 0.2, 1.5);
-      const trailMaterial = new MeshStandardMaterial({
-        color: 0xff6b35,
-        transparent: true,
-        opacity: 0.6,
-        emissive: 0x331100
-      });
-      this.speedTrail = new Mesh(trailGeometry, trailMaterial);
-      this.speedTrail.name = "SpeedTrail";
-      this.group.add(this.speedTrail);
-    }
-
-    // Position trail behind truck
-    const trailOffset = tangent.clone().multiplyScalar(-1.5);
-    this.speedTrail.position.copy(position).add(trailOffset);
-    this.speedTrail.lookAt(position.clone().add(tangent));
-  }
-
-  clearSpeedTrail() {
-    if (this.speedTrail) {
-      this.group.remove(this.speedTrail);
-      this.speedTrail = null;
-    }
-  }
 }
 
 function buildTruckMesh() {

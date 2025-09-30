@@ -21,10 +21,107 @@
       </div>
     </div>
 
+    <!-- Main Lobby Screen -->
+    <div class="lobby-screen" id="lobby-screen" style="display: none;">
+      <div class="lobby-container">
+        <div class="lobby-header">
+          <h1 class="lobby-title">🚛 Parcel Panic</h1>
+          <p class="lobby-subtitle">Deliver packages before time runs out!</p>
+        </div>
+        
+        <div class="lobby-buttons">
+          <button class="lobby-btn primary" id="start-game-btn">
+            <span class="btn-icon">🎮</span>
+            <span class="btn-text">Start Game</span>
+          </button>
+          
+          <button class="lobby-btn secondary" id="settings-btn">
+            <span class="btn-icon">⚙️</span>
+            <span class="btn-text">Settings</span>
+          </button>
+        </div>
+        
+        <div class="lobby-footer">
+          <p class="lobby-tip">💡 Draw routes for your truck to deliver packages before time runs out!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lobby Settings Panel -->
+    <div class="lobby-settings-panel" id="lobby-settings-panel" style="display: none;">
+      <div class="lobby-settings-overlay">
+        <div class="lobby-settings-content">
+          <div class="lobby-settings-header">
+            <h2>⚙️ Settings</h2>
+            <button class="close-lobby-settings-btn" id="close-lobby-settings-btn" data-action="close-lobby-settings" aria-label="Close settings">
+              <span>✕</span>
+            </button>
+          </div>
+          
+          <div class="lobby-settings-body">
+            <div class="lobby-settings-section">
+              <h3>🔊 Audio Settings</h3>
+              
+              <div class="lobby-setting-item">
+                <label for="lobby-master-volume">
+                  <span class="lobby-setting-label">Master Volume</span>
+                  <span class="lobby-setting-value" data-ui="lobby-master-volume-value">100%</span>
+                </label>
+                <input type="range" id="lobby-master-volume" min="0" max="1" step="0.01" value="1" data-setting="lobbyMasterVolume" />
+              </div>
+              
+              <div class="lobby-setting-item">
+                <label for="lobby-sfx-volume">
+                  <span class="lobby-setting-label">SFX Volume</span>
+                  <span class="lobby-setting-value" data-ui="lobby-sfx-volume-value">100%</span>
+                </label>
+                <input type="range" id="lobby-sfx-volume" min="0" max="1" step="0.01" value="1" data-setting="lobbySfxVolume" />
+              </div>
+              
+              <div class="lobby-setting-item">
+                <label for="lobby-bg-volume">
+                  <span class="lobby-setting-label">Background Music</span>
+                  <span class="lobby-setting-value" data-ui="lobby-bg-volume-value">30%</span>
+                </label>
+                <input type="range" id="lobby-bg-volume" min="0" max="1" step="0.01" value="0.3" data-setting="lobbyBgVolume" />
+              </div>
+            </div>
+            
+            <div class="lobby-settings-section">
+              <h3>🎮 Display Settings</h3>
+              
+              <div class="lobby-setting-item">
+                <label for="lobby-fps-toggle">
+                  <span class="lobby-setting-label">Target FPS</span>
+                  <span class="lobby-setting-value" data-ui="lobby-fps-value">60 FPS</span>
+                </label>
+                <select id="lobby-fps-toggle" data-setting="lobbyTargetFPS">
+                  <option value="30">30 FPS</option>
+                  <option value="60" selected>60 FPS</option>
+                  <option value="120">120 FPS</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="lobby-settings-actions">
+              <button class="lobby-settings-btn secondary" data-action="reset-lobby-settings">
+                <span>🔄</span>
+                <span>Reset to Default</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
     <canvas id="stage" title="Playfield &mdash; draw loops here for the truck to follow."></canvas>
 
-    <!-- Top-Left: Stats Panel -->
-    <div class="ui-panel stats-panel">
+    <!-- Left Column: Detailed Stats -->
+    <div class="ui-panel stats-column">
+      <div class="stats-header">
+        <h3>Game Stats</h3>
+      </div>
       <div class="stats-grid">
         <div class="stat-item">
           <span class="stat-label">Week</span>
@@ -33,10 +130,12 @@
         <div class="stat-item">
           <span class="stat-label">Time</span>
           <span class="stat-value" data-ui="week-timer">35</span>
+          <span class="stat-detail" data-ui="time-detail">(base + upgrades)</span>
         </div>
         <div class="stat-item">
           <span class="stat-label">Route Status</span>
-          <span class="stat-value route-cooldown" data-ui="route-cooldown">Ready to draw routes</span>
+          <span class="stat-value route-cooldown" data-ui="route-cooldown">Ready</span>
+          <span class="stat-detail" data-ui="route-detail">(base - upgrades)</span>
         </div>
         <div class="stat-item">
           <span class="stat-label">Seed</span>
@@ -46,6 +145,26 @@
           <span class="stat-label">GPU</span>
           <span class="stat-value" data-ui="webgpu-status">Checking...</span>
         </div>
+        <div class="stat-item">
+          <span class="stat-label">Speed</span>
+          <span class="stat-value" data-ui="truck-speed">1.00</span>
+          <span class="stat-detail" data-ui="speed-detail">(base + tuned engine)</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Service Radius</span>
+          <span class="stat-value" data-ui="delivery-radius">2.0</span>
+          <span class="stat-detail" data-ui="radius-detail">(base + upgrades)</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Speed Boost</span>
+          <span class="stat-value" data-ui="speed-boost">None</span>
+          <span class="stat-detail" data-ui="boost-detail">(temp upgrades)</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Speed Multiplier</span>
+          <span class="stat-value" data-ui="speed-multiplier">1×</span>
+          <span class="stat-detail" data-ui="mult-detail">(global)</span>
+        </div>
       </div>
       <button class="settings-btn" data-action="settings" aria-label="Settings">
         <span>⚙️</span>
@@ -54,31 +173,6 @@
     </div>
 
 
-    <!-- Bottom-Left: Tutorial Panel -->
-    <div class="ui-panel tutorial-panel">
-      <div class="tutorial-header">
-        <div class="tutorial-icon">🚀</div>
-        <h3 class="tutorial-title">Quick Start</h3>
-      </div>
-      <div class="tutorial-steps">
-        <div class="tutorial-step">
-          <div class="step-number">1</div>
-          <div class="step-text"><strong>Click and drag</strong> to draw delivery routes</div>
-        </div>
-        <div class="tutorial-step">
-          <div class="step-number">2</div>
-          <div class="step-text">Press <kbd>Enter</kbd> to start delivering</div>
-        </div>
-        <div class="tutorial-step">
-          <div class="step-number">3</div>
-          <div class="step-text"><strong>Drive near houses</strong> to deliver packages</div>
-        </div>
-        <div class="tutorial-step">
-          <div class="step-number">4</div>
-          <div class="step-text">Use <kbd>Space</kbd> to pause, <kbd>T</kbd> for 2× speed</div>
-        </div>
-      </div>
-    </div>
 
     <!-- Top-Right: Control Panel -->
     <div class="ui-panel control-panel" aria-label="Playback controls">
@@ -100,23 +194,22 @@
       </button>
     </div>
 
-    <!-- Bottom-Right: On-Screen Guide -->
-    <div class="ui-panel on-screen-guide">
-      <div class="guide-header">
-        <div class="guide-icon-header">👁️</div>
-        <h3 class="guide-title">Game Elements</h3>
+    <!-- Right Column: Game Elements -->
+    <div class="ui-panel game-elements">
+      <div class="elements-header">
+        <h3>Game Elements</h3>
       </div>
-      <div class="guide-grid">
-        <div class="guide-item">
-          <div class="guide-icon">🚛</div>
-          <div class="guide-text">
+      <div class="elements-grid">
+        <div class="element-item">
+          <div class="element-icon">🚛</div>
+          <div class="element-text">
             <strong>Brown Truck</strong>
             Your delivery vehicle
           </div>
         </div>
-        <div class="guide-item">
-          <div class="guide-icon">🏠</div>
-          <div class="guide-text">
+        <div class="element-item">
+          <div class="element-icon">🏠</div>
+          <div class="element-text">
             <strong>Houses</strong>
             <div class="house-timers">
               <div class="timer-item">
@@ -134,16 +227,16 @@
             </div>
           </div>
         </div>
-        <div class="guide-item">
-          <div class="guide-icon">🔵</div>
-          <div class="guide-text">
+        <div class="element-item">
+          <div class="element-icon">🔵</div>
+          <div class="element-text">
             <strong>Blue Lines</strong>
             Active delivery routes
           </div>
         </div>
-        <div class="guide-item">
-          <div class="guide-icon">⏰</div>
-          <div class="guide-text">
+        <div class="element-item">
+          <div class="element-icon">⏰</div>
+          <div class="element-text">
             <strong>Timer Rings</strong>
             Shrink as time runs out
           </div>
@@ -153,16 +246,90 @@
 
     <div class="debug hidden" data-ui="debug" title="Debug FPS counter">FPS&nbsp;<span data-ui="fps">60</span></div>
 
-    <div class="settings-panel" aria-label="Audio and settings">
-      <h2>Settings</h2>
-      <label>
-        Volume
-        <input type="range" min="0" max="1" step="0.01" value="1" data-setting="volume" />
-      </label>
-      <label>
-        Background Music
-        <input type="range" min="0" max="1" step="0.01" value="0.3" data-setting="bgMusicVolume" />
-      </label>
+    <!-- ESC Menu -->
+    <div class="esc-menu" id="esc-menu" style="display: none;">
+      <div class="esc-menu-overlay">
+        <div class="esc-menu-content">
+          <div class="esc-menu-header">
+            <h2>🎮 Game Menu</h2>
+            <button class="close-esc-menu-btn" data-action="close-esc-menu" aria-label="Close menu">
+              <span>✕</span>
+            </button>
+          </div>
+          <div class="esc-menu-actions">
+            <button class="esc-menu-btn primary" data-action="esc-settings">
+              <span class="btn-icon">⚙️</span>
+              <span class="btn-text">Settings</span>
+            </button>
+            <button class="esc-menu-btn secondary" data-action="return-to-lobby">
+              <span class="btn-icon">🏠</span>
+              <span class="btn-text">Return to Lobby</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-panel" aria-label="Audio and settings" style="display: none;">
+      <div class="settings-header">
+        <h2>⚙️ Settings</h2>
+        <button class="close-settings-btn" data-action="close-settings" aria-label="Close settings">
+          <span>✕</span>
+        </button>
+      </div>
+      
+      <div class="settings-content">
+        <div class="settings-section">
+          <h3>🔊 Audio Settings</h3>
+          
+          <div class="setting-item">
+            <label for="master-volume">
+              <span class="setting-label">Master Volume</span>
+              <span class="setting-value" data-ui="master-volume-value">100%</span>
+            </label>
+            <input type="range" id="master-volume" min="0" max="1" step="0.01" value="1" data-setting="masterVolume" />
+          </div>
+          
+          <div class="setting-item">
+            <label for="sfx-volume">
+              <span class="setting-label">SFX Volume</span>
+              <span class="setting-value" data-ui="sfx-volume-value">100%</span>
+            </label>
+            <input type="range" id="sfx-volume" min="0" max="1" step="0.01" value="1" data-setting="sfxVolume" />
+          </div>
+          
+          <div class="setting-item">
+            <label for="bg-volume">
+              <span class="setting-label">Background Music</span>
+              <span class="setting-value" data-ui="bg-volume-value">30%</span>
+            </label>
+            <input type="range" id="bg-volume" min="0" max="1" step="0.01" value="0.3" data-setting="bgVolume" />
+          </div>
+        </div>
+        
+        <div class="settings-section">
+          <h3>🎮 Display Settings</h3>
+          
+          <div class="setting-item">
+            <label for="fps-toggle">
+              <span class="setting-label">Target FPS</span>
+              <span class="setting-value" data-ui="fps-value">60 FPS</span>
+            </label>
+            <select id="fps-toggle" data-setting="targetFPS">
+              <option value="30">30 FPS</option>
+              <option value="60" selected>60 FPS</option>
+              <option value="120">120 FPS</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="settings-actions">
+          <button class="settings-btn secondary" data-action="reset-settings">
+            <span>🔄</span>
+            <span>Reset to Default</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="modal upgrade-modal" aria-label="Weekly upgrade chooser">

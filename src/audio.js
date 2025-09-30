@@ -9,23 +9,32 @@ const sounds = new Map([
   ["bg_music", { src: "assets/sfx/bg.mp3", howl: null, loop: true }],
 ]);
 
-let globalVolume = 1;
+let masterVolume = 1;
+let sfxVolume = 1;
+let bgVolume = 0.3;
 let fallbackContext = null;
 const fallbackBuffers = new Map();
 const fallbackLoops = new Map();
 
 export function initAudio(settings = {}) {
-  globalVolume = settings.volume ?? 1;
+  masterVolume = settings.masterVolume ?? 1;
+  sfxVolume = settings.sfxVolume ?? 1;
+  bgVolume = settings.bgVolume ?? 0.3;
+  
   if (typeof Howler !== "undefined") {
-    Howler.volume(globalVolume);
+    Howler.volume(masterVolume);
     console.log("[AUDIO] Preloading all audio assets...");
     
     // Preload all sounds with immediate loading
     for (const [name, data] of sounds) {
+      const isBgMusic = name === "bg_music";
+      const baseVolume = isBgMusic ? bgVolume : sfxVolume;
+      const effectiveVolume = baseVolume * masterVolume;
+      
       data.howl = new Howl({
         src: [data.src],
         loop: data.loop,
-        volume: globalVolume,
+        volume: effectiveVolume,
         preload: true,
         html5: false, // Use Web Audio API for better performance
         onload: () => {
@@ -51,15 +60,44 @@ export function initAudio(settings = {}) {
   }
 }
 
-export function setVolume(volume) {
-  globalVolume = volume;
+export function setMasterVolume(volume) {
+  masterVolume = volume;
+  updateAllVolumes();
+}
+
+export function setSfxVolume(volume) {
+  sfxVolume = volume;
+  updateAllVolumes();
+}
+
+export function setBgVolume(volume) {
+  bgVolume = volume;
+  updateAllVolumes();
+}
+
+function updateAllVolumes() {
   if (typeof Howler !== "undefined") {
-    Howler.volume(volume);
+    Howler.volume(masterVolume);
+    
+    // Update individual sound volumes
+    for (const [name, data] of sounds) {
+      if (data.howl) {
+        const isBgMusic = name === "bg_music";
+        const baseVolume = isBgMusic ? bgVolume : sfxVolume;
+        const effectiveVolume = baseVolume * masterVolume;
+        data.howl.volume(effectiveVolume);
+      }
+    }
   } else if (fallbackLoops.size) {
     for (const [, gain] of fallbackLoops) {
-      gain.gain.value = volume;
+      gain.gain.value = masterVolume;
     }
   }
+}
+
+// Legacy function for backward compatibility
+export function setVolume(volume) {
+  setMasterVolume(volume);
 }
 
 export function play(name) {
@@ -71,7 +109,10 @@ export function play(name) {
   }
   if (data.howl) {
     console.log(`[OK] Playing sound: ${name} with Howl`);
-    data.howl.volume(globalVolume);
+    const isBgMusic = name === "bg_music";
+    const baseVolume = isBgMusic ? bgVolume : sfxVolume;
+    const effectiveVolume = baseVolume * masterVolume;
+    data.howl.volume(effectiveVolume);
     data.howl.play();
   } else {
     console.log(`[WARN] Using fallback for sound: ${name}`);
@@ -83,7 +124,8 @@ export function loop(name) {
   const data = sounds.get(name);
   if (!data) return;
   if (data.howl) {
-    data.howl.volume(globalVolume);
+    const effectiveVolume = bgVolume * masterVolume;
+    data.howl.volume(effectiveVolume);
     data.howl.loop(true);
     data.howl.play();
   } else {
@@ -145,7 +187,7 @@ function playFallback(name, loop) {
   source.buffer = buffer;
   source.loop = loop;
   const gain = fallbackContext.createGain();
-  gain.gain.value = globalVolume;
+  gain.gain.value = masterVolume;
   source.connect(gain).connect(fallbackContext.destination);
   source.start(0);
   if (loop) {
@@ -154,24 +196,10 @@ function playFallback(name, loop) {
 }
 
 // Background music functions
-let bgMusicVolume = 0.3; // Default background music volume
-
-export function setBackgroundMusicVolume(volume) {
-  bgMusicVolume = Math.max(0, Math.min(1, volume));
-  console.log(`[MUSIC] Background music volume set to: ${bgMusicVolume}`);
-  
-  // Update volume if background music is currently playing
-  if (typeof Howler !== "undefined") {
-    const bgMusic = sounds.get("bg_music");
-    if (bgMusic && bgMusic.howl) {
-      bgMusic.howl.volume(bgMusicVolume);
-    }
-  }
-}
 
 export function startBackgroundMusic() {
   console.log("[MUSIC] Starting background music...");
-  play("bg_music", bgMusicVolume); // Use the background music volume setting
+  loop("bg_music"); // Start background music loop
 }
 
 export function stopBackgroundMusic() {

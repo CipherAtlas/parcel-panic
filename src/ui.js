@@ -42,6 +42,12 @@ export function initUI() {
   state.weekTimerLabel = document.querySelector('[data-ui=week-timer]');
   state.seedLabel = document.querySelector('[data-ui=seed]');
   state.webgpuStatus = document.querySelector('[data-ui=webgpu-status]');
+  
+  // New detailed stats selectors
+  state.truckSpeedLabel = document.querySelector('[data-ui=truck-speed]');
+  state.deliveryRadiusLabel = document.querySelector('[data-ui=delivery-radius]');
+  state.speedBoostLabel = document.querySelector('[data-ui=speed-boost]');
+  state.speedMultiplierLabel = document.querySelector('[data-ui=speed-multiplier]');
   state.fpsLabel = document.querySelector('[data-ui=fps]');
   state.debugWrap = document.querySelector('[data-ui=debug]');
 
@@ -57,8 +63,26 @@ export function initUI() {
 
   state.settingsBtn = document.querySelector('[data-action=settings]');
   state.settingsPanel = document.querySelector('.settings-panel');
-  state.volumeSlider = document.querySelector('[data-setting=volume]');
-  state.bgMusicVolumeSlider = document.querySelector('[data-setting=bgMusicVolume]');
+  state.closeSettingsBtn = document.querySelector('[data-action=close-settings]');
+  state.resetBtn = document.querySelector('[data-action=reset-settings]');
+  
+  // ESC Menu elements
+  state.escMenu = document.getElementById('esc-menu');
+  state.closeEscMenuBtn = document.querySelector('[data-action=close-esc-menu]');
+  state.escSettingsBtn = document.querySelector('[data-action=esc-settings]');
+  state.returnToLobbyBtn = document.querySelector('[data-action=return-to-lobby]');
+  
+  // New settings controls
+  state.masterVolumeSlider = document.querySelector('[data-setting=masterVolume]');
+  state.sfxVolumeSlider = document.querySelector('[data-setting=sfxVolume]');
+  state.bgVolumeSlider = document.querySelector('[data-setting=bgVolume]');
+  state.fpsSelect = document.querySelector('[data-setting=targetFPS]');
+  
+  // Settings value displays
+  state.masterVolumeValue = document.querySelector('[data-ui=master-volume-value]');
+  state.sfxVolumeValue = document.querySelector('[data-ui=sfx-volume-value]');
+  state.bgVolumeValue = document.querySelector('[data-ui=bg-volume-value]');
+  state.fpsValue = document.querySelector('[data-ui=fps-value]');
 
   state.pauseBtn?.addEventListener('click', () => state.onPausePress?.());
   state.speedBtn?.addEventListener('click', (event) => {
@@ -75,6 +99,47 @@ export function initUI() {
   state.retryBtn?.addEventListener('click', () => state.onRetry?.());
   state.newRunBtn?.addEventListener('click', () => state.onNewRun?.());
   state.settingsBtn?.addEventListener('click', toggleSettings);
+  state.closeSettingsBtn?.addEventListener('click', closeSettings);
+  
+  // Settings control event listeners
+  state.masterVolumeSlider?.addEventListener('input', (e) => {
+    const value = parseFloat(e.target.value);
+    updateVolumeDisplay('master', value);
+    state.onMasterVolumeChange?.(value);
+  });
+  
+  state.sfxVolumeSlider?.addEventListener('input', (e) => {
+    const value = parseFloat(e.target.value);
+    updateVolumeDisplay('sfx', value);
+    state.onSfxVolumeChange?.(value);
+  });
+  
+  state.bgVolumeSlider?.addEventListener('input', (e) => {
+    const value = parseFloat(e.target.value);
+    updateVolumeDisplay('bg', value);
+    state.onBgVolumeChange?.(value);
+  });
+  
+  state.fpsSelect?.addEventListener('change', (e) => {
+    const fps = parseInt(e.target.value);
+    updateFpsDisplay(fps);
+    state.onFpsChange?.(fps);
+  });
+  
+  state.resetBtn?.addEventListener('click', () => {
+    resetSettings();
+  });
+  
+  // ESC Menu event listeners
+  state.closeEscMenuBtn?.addEventListener('click', closeEscMenu);
+  state.escSettingsBtn?.addEventListener('click', () => {
+    closeEscMenu();
+    toggleSettings();
+  });
+  state.returnToLobbyBtn?.addEventListener('click', () => {
+    closeEscMenu();
+    returnToLobby();
+  });
   
   // Social button event listeners
   document.querySelector('[data-action=twitter]')?.addEventListener('click', () => {
@@ -190,14 +255,32 @@ export function hideGameOver() {
   document.body.classList.remove("modal-open");
 }
 
-export function setSettings(settings, onVolumeChange, onBackgroundMusicVolumeChange) {
-  state.onVolumeChange = onVolumeChange;
-  state.onBackgroundMusicVolumeChange = onBackgroundMusicVolumeChange;
-  if (state.volumeSlider) {
-    state.volumeSlider.value = String(settings.volume ?? 1);
+export function setSettings(settings, callbacks) {
+  // Bind callback functions
+  state.onMasterVolumeChange = callbacks.onMasterVolumeChange;
+  state.onSfxVolumeChange = callbacks.onSfxVolumeChange;
+  state.onBgVolumeChange = callbacks.onBgVolumeChange;
+  state.onFpsChange = callbacks.onFpsChange;
+  
+  // Set initial values
+  if (state.masterVolumeSlider) {
+    state.masterVolumeSlider.value = String(settings.masterVolume ?? 1);
+    updateVolumeDisplay('master', settings.masterVolume ?? 1);
   }
-  if (state.bgMusicVolumeSlider) {
-    state.bgMusicVolumeSlider.value = String(settings.bgMusicVolume ?? 0.3);
+  
+  if (state.sfxVolumeSlider) {
+    state.sfxVolumeSlider.value = String(settings.sfxVolume ?? 1);
+    updateVolumeDisplay('sfx', settings.sfxVolume ?? 1);
+  }
+  
+  if (state.bgVolumeSlider) {
+    state.bgVolumeSlider.value = String(settings.bgVolume ?? 0.3);
+    updateVolumeDisplay('bg', settings.bgVolume ?? 0.3);
+  }
+  
+  if (state.fpsSelect) {
+    state.fpsSelect.value = String(settings.targetFPS ?? 60);
+    updateFpsDisplay(settings.targetFPS ?? 60);
   }
 }
 
@@ -213,8 +296,135 @@ export function setHUDVisible(visible) {
 }
 
 function toggleSettings() {
-  const open = state.settingsPanel?.classList.toggle("open");
-  document.body.classList.toggle("modal-open", !!open);
+  const isVisible = state.settingsPanel?.style.display !== 'none';
+  
+  if (isVisible) {
+    state.settingsPanel.style.display = 'none';
+    document.body.classList.remove("modal-open");
+  } else {
+    state.settingsPanel.style.display = 'block';
+    document.body.classList.add("modal-open");
+  }
+}
+
+// Make functions available globally
+window.toggleSettings = toggleSettings;
+window.toggleEscMenu = toggleEscMenu;
+window.showEscMenu = showEscMenu;
+window.closeEscMenu = closeEscMenu;
+
+// Function to update in-game settings UI from lobby
+window.updateInGameSettingsUI = function(settings) {
+  if (state.masterVolumeSlider) {
+    state.masterVolumeSlider.value = String(settings.masterVolume ?? 1);
+    updateVolumeDisplay('master', settings.masterVolume ?? 1);
+  }
+  
+  if (state.sfxVolumeSlider) {
+    state.sfxVolumeSlider.value = String(settings.sfxVolume ?? 1);
+    updateVolumeDisplay('sfx', settings.sfxVolume ?? 1);
+  }
+  
+  if (state.bgVolumeSlider) {
+    state.bgVolumeSlider.value = String(settings.bgVolume ?? 0.3);
+    updateVolumeDisplay('bg', settings.bgVolume ?? 0.3);
+  }
+  
+  if (state.fpsSelect) {
+    state.fpsSelect.value = String(settings.targetFPS ?? 60);
+    updateFpsDisplay(settings.targetFPS ?? 60);
+  }
+};
+
+function closeSettings() {
+  state.settingsPanel.style.display = 'none';
+  document.body.classList.remove("modal-open");
+}
+
+function updateVolumeDisplay(type, value) {
+  const percentage = Math.round(value * 100);
+  switch (type) {
+    case 'master':
+      if (state.masterVolumeValue) state.masterVolumeValue.textContent = `${percentage}%`;
+      break;
+    case 'sfx':
+      if (state.sfxVolumeValue) state.sfxVolumeValue.textContent = `${percentage}%`;
+      break;
+    case 'bg':
+      if (state.bgVolumeValue) state.bgVolumeValue.textContent = `${percentage}%`;
+      break;
+  }
+}
+
+function updateFpsDisplay(fps) {
+  if (state.fpsValue) state.fpsValue.textContent = `${fps} FPS`;
+}
+
+function resetSettings() {
+  // Reset to default values
+  if (state.masterVolumeSlider) {
+    state.masterVolumeSlider.value = '1';
+    updateVolumeDisplay('master', 1);
+    state.onMasterVolumeChange?.(1);
+  }
+  
+  if (state.sfxVolumeSlider) {
+    state.sfxVolumeSlider.value = '1';
+    updateVolumeDisplay('sfx', 1);
+    state.onSfxVolumeChange?.(1);
+  }
+  
+  if (state.bgVolumeSlider) {
+    state.bgVolumeSlider.value = '0.3';
+    updateVolumeDisplay('bg', 0.3);
+    state.onBgVolumeChange?.(0.3);
+  }
+  
+  if (state.fpsSelect) {
+    state.fpsSelect.value = '60';
+    updateFpsDisplay(60);
+    state.onFpsChange?.(60);
+  }
+}
+
+// ESC Menu functions
+function toggleEscMenu() {
+  const isVisible = state.escMenu?.style.display !== 'none';
+  if (isVisible) {
+    closeEscMenu();
+  } else {
+    showEscMenu();
+  }
+}
+
+function showEscMenu() {
+  if (state.escMenu) {
+    state.escMenu.style.display = 'flex';
+    document.body.classList.add("modal-open");
+  }
+}
+
+function closeEscMenu() {
+  if (state.escMenu) {
+    state.escMenu.style.display = 'none';
+    document.body.classList.remove("modal-open");
+  }
+}
+
+function returnToLobby() {
+  console.log("[ESC MENU] Returning to lobby");
+  // Hide all game UI
+  if (state.hud) state.hud.style.display = 'none';
+  if (state.settingsPanel) state.settingsPanel.style.display = 'none';
+  
+  // Show lobby
+  const lobbyScreen = document.getElementById('lobby-screen');
+  if (lobbyScreen) {
+    lobbyScreen.style.display = 'flex';
+  }
+  
+  // Stop the game loop by not calling requestAnimationFrame
+  // The game will naturally stop when we return to lobby
 }
 
 
@@ -271,11 +481,36 @@ export function setSpeedMultiplier(multiplier) {
   if (state.speedLabel) {
     state.speedLabel.textContent = multiplier + symbol;
   }
+  if (state.speedMultiplierLabel) {
+    state.speedMultiplierLabel.textContent = `${multiplier}×`;
+  }
   if (state.speedBtn) {
     const fast = multiplier > 1;
     state.speedBtn.setAttribute("aria-pressed", fast ? "true" : "false");
     state.speedBtn.classList.toggle("active", fast);
     state.speedBtn.title = fast ? "Back to 1" + symbol : "Toggle 2" + symbol + " speed";
+  }
+}
+
+export function setTruckSpeed(speed) {
+  if (state.truckSpeedLabel) {
+    state.truckSpeedLabel.textContent = speed.toFixed(2);
+  }
+}
+
+export function setDeliveryRadius(radius) {
+  if (state.deliveryRadiusLabel) {
+    state.deliveryRadiusLabel.textContent = radius.toFixed(1);
+  }
+}
+
+export function setSpeedBoost(active, timeLeft = 0) {
+  if (state.speedBoostLabel) {
+    if (active) {
+      state.speedBoostLabel.textContent = `${timeLeft.toFixed(1)}s`;
+    } else {
+      state.speedBoostLabel.textContent = "None";
+    }
   }
 }
 

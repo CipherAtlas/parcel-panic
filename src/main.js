@@ -13,7 +13,8 @@ import { HouseManager } from "./house.js";
 import { generateChoices } from "./upgrades.js";
 import * as ui from "./ui.js";
 import * as audio from "./audio.js";
-import { getHighscore, saveHighscore, getSettings, saveSettings } from "./save.js";
+import { lobbyManager } from "./lobby.js";
+import { getHighscore, saveHighscore, getSettings, saveSettings, getLobbySettings } from "./save.js";
 import { preloadAssets } from "./asset-loader.js";
 
 export const CONFIG = {
@@ -57,13 +58,13 @@ const state = {
   fpsAccum: 0,
   fpsFrames: 0,
   fps: 0,
+  targetFPS: 60,
   paused: false,
   pauseCooldown: 0,
   pendingRouteCommit: null,
   routeCooldown: 0,
   rmbCooldown: 0,
   routeCooldownModifier: 1.0,
-  rmbCooldownModifier: 1.0,
   settings: {
     volume: 1,
   },
@@ -190,13 +191,32 @@ function boot() {
   state.rng = createRNG(state.seed);
   state.highscore = getHighscore();
 
+  // Get lobby settings (prioritize over game settings)
+  const lobbySettings = getLobbySettings();
+  
   state.settings = {
-    volume: getSettings().volume ?? 1,
-    bgMusicVolume: getSettings().bgMusicVolume ?? 0.3,
+    masterVolume: lobbySettings.masterVolume ?? getSettings().masterVolume ?? 1,
+    sfxVolume: lobbySettings.sfxVolume ?? getSettings().sfxVolume ?? 1,
+    bgVolume: lobbySettings.bgVolume ?? getSettings().bgVolume ?? 0.3,
+    targetFPS: lobbySettings.targetFPS ?? getSettings().targetFPS ?? 60,
   };
-  ui.setSettings(state.settings, handleVolumeChange, handleBackgroundMusicVolumeChange);
+  
+  ui.setSettings(state.settings, {
+    onMasterVolumeChange: handleMasterVolumeChange,
+    onSfxVolumeChange: handleSfxVolumeChange,
+    onBgVolumeChange: handleBgVolumeChange,
+    onFpsChange: handleFpsChange,
+  });
+  
   audio.initAudio(state.settings);
   console.log("[AUDIO] Audio system initialized");
+  
+  // Make audio functions available globally for lobby settings
+  window.audio = audio;
+  
+  // Make settings functions available globally for lobby
+  window.getLobbySettings = getLobbySettings;
+  window.saveSettings = saveSettings;
   
   // Start background music after audio system is initialized
   audio.startBackgroundMusic();
@@ -205,6 +225,10 @@ function boot() {
   state.truck = new Truck(CONFIG);
   state.truck.addToScene(getScene());
   state.houseManager = new HouseManager(getScene(), state.mapState, state.rng, CONFIG);
+  
+  // Initialize truck stats in UI after truck is created
+  ui.setTruckSpeed(state.truck.baseSpeed);
+  ui.setDeliveryRadius(state.truck.deliveryRadius);
 
   route.initRoute(getScene(), state.mapState, CONFIG);
   route.onRouteCommitted(({ curve, lut, attachInfo }) => {
@@ -216,6 +240,7 @@ function boot() {
       // Immediately attach truck to route if not in pause cooldown
       const info = attachInfo ?? { u: 0 };
       state.truck.attachToCurve(curve, lut, info.u ?? 0, info.point ?? null);
+      
     }
   });
 
@@ -224,10 +249,16 @@ function boot() {
 
   setupDebugTools();
 
-  newRun(state.seed);
-
-  state.lastFrameTime = performance.now();
-  requestAnimationFrame(tick);
+  // Initialize lobby system
+  lobbyManager.init();
+  
+  // Make startMainGame function available globally
+  window.startMainGame = () => {
+    newRun(state.seed);
+    state.lastFrameTime = performance.now();
+    requestAnimationFrame(tick);
+  };
+  
 }
 
 function newRun(seed) {
@@ -246,8 +277,7 @@ function newRun(seed) {
   state.pendingRouteCommit = null;
   state.routeCooldown = 0;
   state.rmbCooldown = 0;
-  state.routeCooldownModifier = 1.0;
-  state.rmbCooldownModifier = 1.0;
+  state.routeCooldownModifier = 0;
   // Don't reset speed multiplier - preserve user's choice
   state.speedMultiplier = preservedSpeed;
   state.simTimeMs = 0;
@@ -258,6 +288,10 @@ function newRun(seed) {
 
   ui.setPauseState(state.paused);
   ui.setSpeedMultiplier(state.speedMultiplier);
+  
+  // Update truck stats UI for new run
+  ui.setTruckSpeed(state.truck.baseSpeed);
+  ui.setDeliveryRadius(state.truck.deliveryRadius);
 
   buildDefaultRoute();
   ui.setScore(state.score);
@@ -269,7 +303,17 @@ function newRun(seed) {
 
 function tick(now) {
   requestAnimationFrame(tick);
+  
+  // Calculate delta time and respect target FPS
   const rawDt = Math.min((now - state.lastFrameTime) / 1000, 0.1);
+  const targetFrameTime = 1000 / state.targetFPS;
+  const actualFrameTime = now - state.lastFrameTime;
+  
+  // Skip frame if we're running too fast for target FPS
+  if (actualFrameTime < targetFrameTime) {
+    return;
+  }
+  
   state.lastFrameTime = now;
 
   processInput();
@@ -373,10 +417,10 @@ function processInput() {
       
       // Start route cooldown after committing a route
       const baseCooldown = 8.0; // 8 second cooldown between routes
-      const modifier = state.routeCooldownModifier || 1.0;
-      state.routeCooldown = baseCooldown * modifier;
+      const reduction = Math.abs(state.routeCooldownModifier || 0);
+      state.routeCooldown = Math.max(0.5, baseCooldown - reduction); // Minimum 0.5s cooldown
       ui.setRouteCooldown(state.routeCooldown);
-      console.log("[ROUTE] Started route cooldown");
+      console.log(`[ROUTE] Started route cooldown: ${state.routeCooldown.toFixed(1)}s (base: ${baseCooldown}s, reduction: ${reduction}s)`);
       
       // If pause cooldown is active, queue the route commit
       if (state.pauseCooldown > 0) {
@@ -391,6 +435,7 @@ function processInput() {
       // Play route commit sound when route is successfully committed
       console.log("[AUDIO] Playing route_commit sound (Enter key)");
       audio.play("route_commit");
+      
     } else {
       console.log("[FAIL] Route commit failed - route cancelled");
       route.cancelRoute();
@@ -413,14 +458,18 @@ function updateSimulation(dt, now) {
   // Update UI
   ui.setWeekTimer(state.weekTimer);
 
+  // Use regular houses
   const houses = state.houseManager.getHouses();
+    
   state.truck.update(dt, {
     houses,
     onDeliver: handleDelivery,
     now,
   });
 
-  const expired = state.houseManager.update(dt, now);
+  // Update house manager
+  let expired = state.houseManager.update(dt, now);
+  
   if (expired) {
     // Play house expire sound when house visually disappears
     audio.play("house_expire");
@@ -444,6 +493,8 @@ function updateSimulation(dt, now) {
 
 function handleDelivery(house, timestamp) {
   const now = typeof timestamp === "number" ? timestamp : performance.now();
+  
+  // Handle regular house delivery
   state.houseManager.handleDelivery(house, now);
   state.score += 1;
   ui.setScore(state.score);
@@ -470,12 +521,13 @@ function enterUpgradePhase() {
 
 function applyUpgradeCard(card) {
   if (!card) return;
-  card.apply({
-    truck: state.truck,
-    config: CONFIG,
-    houseManager: state.houseManager,
-  });
+  card.apply(state);
   state.takenUpgrades.add(card.id);
+  
+  // Update UI with new truck stats
+  ui.setTruckSpeed(state.truck.baseSpeed);
+  ui.setDeliveryRadius(state.truck.deliveryRadius);
+  
   ui.hideUpgradeModal();
   state.mode = "run";
   state.paused = false;
@@ -557,6 +609,18 @@ function wireInputHandlers() {
       if (state.routeActive && payload.button === 0) {
         route.updateRouteDraw(world, true);
         route.finishRouteDraw();
+      }
+    }
+  });
+
+  // ESC key handling for game menu
+  input.on("key-down", (payload) => {
+    if (payload.code === "Escape") {
+      // Only show ESC menu when in game (not in lobby or tutorial)
+      if (state.mode === "run" && !state.paused) {
+        if (window.toggleEscMenu) {
+          window.toggleEscMenu();
+        }
       }
     }
   });
@@ -726,18 +790,34 @@ function toggleDebugTools(enabled) {
   }
 }
 
-function handleVolumeChange(value) {
+function handleMasterVolumeChange(value) {
   const clamped = Math.max(0, Math.min(1, value));
-  state.settings.volume = clamped;
-  audio.setVolume(clamped);
-  saveSettings({ volume: clamped });
+  state.settings.masterVolume = clamped;
+  audio.setMasterVolume(clamped);
+  saveSettings({ masterVolume: clamped });
 }
 
-function handleBackgroundMusicVolumeChange(value) {
+function handleSfxVolumeChange(value) {
   const clamped = Math.max(0, Math.min(1, value));
-  state.settings.bgMusicVolume = clamped;
-  audio.setBackgroundMusicVolume(clamped);
-  saveSettings({ bgMusicVolume: clamped });
+  state.settings.sfxVolume = clamped;
+  audio.setSfxVolume(clamped);
+  saveSettings({ sfxVolume: clamped });
+}
+
+function handleBgVolumeChange(value) {
+  const clamped = Math.max(0, Math.min(1, value));
+  state.settings.bgVolume = clamped;
+  audio.setBgVolume(clamped);
+  saveSettings({ bgVolume: clamped });
+}
+
+function handleFpsChange(fps) {
+  state.settings.targetFPS = fps;
+  saveSettings({ targetFPS: fps });
+  
+  // Update target FPS for the game loop
+  state.targetFPS = fps;
+  console.log(`[SETTINGS] Target FPS set to: ${fps}`);
 }
 
 // WebGPU Status Functions

@@ -327,6 +327,12 @@ export function commitRoute(force = false, options = {}) {
   for (const cb of state.commitListeners) {
     cb(result);
   }
+  
+  // Notify lobby manager for tutorial validation
+  if (window.lobbyManager) {
+    window.lobbyManager.validateTutorialAction('route_drawn');
+  }
+  
   return result;
 }
 

@@ -34,13 +34,12 @@ const UPGRADE_POOL = [
         speedIncrease = 1.20; // Fourth upgrade: +20%
       }
       
+      // Apply the speed increase multiplicatively to the current speed
       state.truck.baseSpeed *= speedIncrease;
       
-      // Add visual speed feedback
-      state.truck.speedBoostActive = true;
-      setTimeout(() => {
-        if (state.truck) state.truck.speedBoostActive = false;
-      }, 2000);
+      console.log(`[UPGRADE] Tuned Engine applied: ${(speedIncrease - 1) * 100}% speed boost (new speed: ${state.truck.baseSpeed.toFixed(2)})`);
+      
+      // Visual speed feedback removed
     },
     stackable: true,
   },
@@ -69,13 +68,14 @@ const UPGRADE_POOL = [
   {
     id: "dispatch_optimizer",
     name: "Dispatch Optimizer",
-    desc: "Route cooldown -50%. Draw routes more frequently.",
+    desc: "Route cooldown -1.5s. Draw routes more frequently.",
     apply: (state) => {
       // This will be handled in main.js when route cooldown is applied
       if (!state.routeCooldownModifier) {
-        state.routeCooldownModifier = 1.0;
+        state.routeCooldownModifier = 0;
       }
-      state.routeCooldownModifier *= 0.5; // Reduce cooldown by 50%
+      state.routeCooldownModifier -= 1.5; // Reduce cooldown by 1.5 seconds
+      console.log(`[UPGRADE] Dispatch Optimizer applied - route cooldown reduction: ${Math.abs(state.routeCooldownModifier)}s`);
     },
     stackable: true,
   },
@@ -85,19 +85,6 @@ const UPGRADE_POOL = [
     desc: "Week timer +15 seconds. More time to plan routes.",
     apply: (state) => {
       state.config.WEEK_SECONDS += 15;
-    },
-    stackable: true,
-  },
-  {
-    id: "fleet_training",
-    name: "Fleet Training",
-    desc: "RMB cooldown -60%. Add route segments more frequently.",
-    apply: (state) => {
-      // This will be handled in main.js when RMB cooldown is applied
-      if (!state.rmbCooldownModifier) {
-        state.rmbCooldownModifier = 1.0;
-      }
-      state.rmbCooldownModifier *= 0.4; // Reduce cooldown by 60%
     },
     stackable: true,
   },

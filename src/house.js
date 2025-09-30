@@ -7,6 +7,11 @@ import {
   CylinderGeometry,
   RingGeometry,
   Vector3,
+  SphereGeometry,
+  Points,
+  PointsMaterial,
+  BufferGeometry,
+  Float32BufferAttribute,
 } from "three";
 import { getRandomSpawnPoint } from "./map.js";
 import { clamp, colorLerp, lerp, smoothstep, vec3DistanceXZ, PALETTE } from "./utils.js";
@@ -34,6 +39,12 @@ export class House {
     this.bodyMesh = this.group.getObjectByName("HouseBody");
     this.roofMesh = this.group.getObjectByName("HouseRoof");
     this.ringIndexCount = this.timerMesh.geometry.index?.count ?? RING_SEGMENTS * 6;
+    
+    // Delivery effect properties
+    this.deliveryEffect = null;
+    this.deliveryEffectDuration = 0;
+    this.deliveryParticles = null;
+    
     this.refreshVisuals();
   }
 
@@ -43,6 +54,9 @@ export class House {
     // Apply different timer speeds based on house type
     const timerSpeed = this.getTimerSpeed();
     this.deadlineMs -= dt * 1000 * timerSpeed;
+    
+    // Update delivery effects
+    this.updateDeliveryEffect(dt);
     
     this.refreshVisuals();
     return this.deadlineMs <= 0;
@@ -66,6 +80,9 @@ export class House {
     this.deadlineMs = this.deadlineMaxMs;
     this.lastServedAt = now;
     this.refreshVisuals();
+    
+    // Trigger delivery effect
+    this.triggerDeliveryEffect();
   }
 
   isServedRecently(now) {
@@ -97,6 +114,68 @@ export class House {
     this.deadlineMaxMs = deadlineMs;
     this.deadlineMs = deadlineMs;
     this.refreshVisuals();
+  }
+  
+  triggerDeliveryEffect() {
+    // Create a simple, clean delivery effect
+    this.createDeliveryEffect();
+    this.deliveryEffectDuration = 0.8; // 800ms effect
+  }
+  
+  createDeliveryEffect() {
+    // Create a simple checkmark or star effect above the house
+    if (this.deliveryParticles) {
+      this.group.remove(this.deliveryParticles);
+    }
+    
+    // Create a simple sphere that appears above the house
+    const geometry = new SphereGeometry(0.3, 8, 6);
+    const material = new MeshBasicMaterial({
+      color: this.getDeliveryColor(),
+      transparent: true,
+      opacity: 0.9
+    });
+    
+    this.deliveryParticles = new Mesh(geometry, material);
+    this.deliveryParticles.position.set(0, 4, 0); // Above the house
+    this.deliveryParticles.name = "DeliveryEffect";
+    this.group.add(this.deliveryParticles);
+  }
+  
+  getDeliveryColor() {
+    switch (this.houseType) {
+      case "normal":
+        return 0x00ff00; // Bright green
+      case "medium":
+        return 0xff00ff; // Bright magenta
+      case "urgent":
+        return 0xff0000; // Bright red
+      default:
+        return 0x00ff00;
+    }
+  }
+  
+  updateDeliveryEffect(dt) {
+    if (this.deliveryEffectDuration <= 0) return;
+    
+    this.deliveryEffectDuration -= dt;
+    
+    // Simple floating and fading effect
+    if (this.deliveryParticles) {
+      // Float upward
+      this.deliveryParticles.position.y += dt * 2;
+      
+      // Fade out
+      this.deliveryParticles.material.opacity = this.deliveryEffectDuration / 0.8;
+      
+      // Gentle rotation
+      this.deliveryParticles.rotation.y += dt * 3;
+      
+      if (this.deliveryEffectDuration <= 0) {
+        this.group.remove(this.deliveryParticles);
+        this.deliveryParticles = null;
+      }
+    }
   }
 }
 

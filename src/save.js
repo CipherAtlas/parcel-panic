@@ -49,3 +49,30 @@ export function saveSettings(settings) {
     console.warn("Failed to save settings", err);
   }
 }
+
+export function getLobbySettings() {
+  if (!storage) return {
+    masterVolume: 1,
+    sfxVolume: 1,
+    bgVolume: 0.3,
+    targetFPS: 60
+  };
+  try {
+    const raw = storage.getItem(SETTINGS_KEY);
+    const settings = raw ? JSON.parse(raw) : {};
+    return {
+      masterVolume: settings.masterVolume ?? 1,
+      sfxVolume: settings.sfxVolume ?? 1,
+      bgVolume: settings.bgVolume ?? 0.3,
+      targetFPS: settings.targetFPS ?? 60
+    };
+  } catch (err) {
+    console.warn("Failed to parse lobby settings", err);
+    return {
+      masterVolume: 1,
+      sfxVolume: 1,
+      bgVolume: 0.3,
+      targetFPS: 60
+    };
+  }
+}

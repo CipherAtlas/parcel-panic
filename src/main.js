@@ -60,6 +60,7 @@ const state = {
   fps: 0,
   targetFPS: 60,
   paused: false,
+  tutorialPaused: false,
   pauseCooldown: 0,
   pendingRouteCommit: null,
   routeCooldown: 0,
@@ -217,6 +218,17 @@ function boot() {
   // Make settings functions available globally for lobby
   window.getLobbySettings = getLobbySettings;
   window.saveSettings = saveSettings;
+
+  // Make pause function available globally for tutorial
+  window.globalPauseGame = () => {
+    state.paused = true;
+    state.tutorialPaused = true;
+  };
+
+  window.globalUnpauseGame = () => {
+    state.paused = false;
+    state.tutorialPaused = false;
+  };
   
   // Start background music after audio system is initialized
   audio.startBackgroundMusic();
@@ -617,7 +629,8 @@ function wireInputHandlers() {
   input.on("key-down", (payload) => {
     if (payload.code === "Escape") {
       // Only show ESC menu when in game (not in lobby or tutorial)
-      if (state.mode === "run" && !state.paused) {
+      // Allow ESC menu even when paused, but not during tutorial
+      if (state.mode === "run" && !state.tutorialPaused) {
         if (window.toggleEscMenu) {
           window.toggleEscMenu();
         }

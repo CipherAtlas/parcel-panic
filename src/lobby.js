@@ -13,7 +13,7 @@ export class LobbyManager {
   bindEvents() {
     // Lobby buttons
     document.getElementById('start-game-btn')?.addEventListener('click', () => {
-      this.startGame();
+      this.startGameWithTutorial();
     });
 
     document.getElementById('settings-btn')?.addEventListener('click', () => {
@@ -27,6 +27,47 @@ export class LobbyManager {
 
     document.getElementById('reset-lobby-settings')?.addEventListener('click', () => {
       this.resetLobbySettings();
+    });
+
+    // Tutorial prompt controls
+    document.getElementById('watch-tutorial-btn')?.addEventListener('click', () => {
+      this.hideTutorialPrompt();
+      this.showTutorialFlashcards();
+    });
+
+    document.getElementById('skip-tutorial-btn')?.addEventListener('click', () => {
+      this.hideTutorialPrompt();
+      this.startGame();
+    });
+
+    // Tutorial flashcards controls
+    document.getElementById('close-tutorial-flashcards-btn')?.addEventListener('click', () => {
+      this.hideTutorialFlashcards();
+      this.startGame();
+    });
+
+    document.getElementById('next-flashcard-btn')?.addEventListener('click', () => {
+      this.nextFlashcard();
+    });
+
+    document.getElementById('prev-flashcard-btn')?.addEventListener('click', () => {
+      this.prevFlashcard();
+    });
+
+    // Close tutorial prompt when clicking outside
+    document.getElementById('tutorial-prompt-overlay')?.addEventListener('click', (e) => {
+      if (e.target.id === 'tutorial-prompt-overlay') {
+        this.hideTutorialPrompt();
+        this.startGame();
+      }
+    });
+
+    // Close tutorial flashcards when clicking outside
+    document.getElementById('tutorial-flashcards-overlay')?.addEventListener('click', (e) => {
+      if (e.target.id === 'tutorial-flashcards-overlay') {
+        this.hideTutorialFlashcards();
+        this.startGame();
+      }
     });
 
     // Lobby volume controls
@@ -95,6 +136,62 @@ export class LobbyManager {
     this.hideLobby();
     if (window.startMainGame) {
       window.startMainGame();
+    }
+  }
+
+  startGameWithTutorial() {
+    // Show tutorial prompt when starting game
+    this.showTutorialPrompt();
+  }
+
+  showTutorialPrompt() {
+    const tutorialPromptOverlay = document.getElementById('tutorial-prompt-overlay');
+    if (tutorialPromptOverlay) {
+      tutorialPromptOverlay.style.display = 'flex';
+      document.body.classList.add('modal-open');
+      // Pause the game globally when tutorial is shown
+      if (window.globalPauseGame) {
+        window.globalPauseGame();
+      }
+    }
+  }
+
+  hideTutorialPrompt() {
+    const tutorialPromptOverlay = document.getElementById('tutorial-prompt-overlay');
+    if (tutorialPromptOverlay) {
+      tutorialPromptOverlay.style.display = 'none';
+      document.body.classList.remove('modal-open');
+      // Unpause the game when tutorial is hidden
+      if (window.globalUnpauseGame) {
+        window.globalUnpauseGame();
+      }
+    }
+  }
+
+  showTutorialFlashcards() {
+    const tutorialFlashcardsOverlay = document.getElementById('tutorial-flashcards-overlay');
+    if (tutorialFlashcardsOverlay) {
+      tutorialFlashcardsOverlay.style.display = 'flex';
+      document.body.classList.add('modal-open');
+      this.currentFlashcard = 0;
+      this.updateFlashcard();
+      this.updateProgress();
+      // Ensure game is paused during flashcards
+      if (window.globalPauseGame) {
+        window.globalPauseGame();
+      }
+    }
+  }
+
+  hideTutorialFlashcards() {
+    const tutorialFlashcardsOverlay = document.getElementById('tutorial-flashcards-overlay');
+    if (tutorialFlashcardsOverlay) {
+      tutorialFlashcardsOverlay.style.display = 'none';
+      document.body.classList.remove('modal-open');
+      // Unpause the game when flashcards are hidden
+      if (window.globalUnpauseGame) {
+        window.globalUnpauseGame();
+      }
     }
   }
 
@@ -236,6 +333,130 @@ export class LobbyManager {
     if (window.updateInGameSettingsUI) {
       const currentSettings = this.getLobbySettings();
       window.updateInGameSettingsUI(currentSettings);
+    }
+  }
+
+  // Tutorial flashcard data
+  tutorialFlashcards = [
+    {
+      title: "🎯 Objective",
+      content: "<p>Draw delivery routes for your truck to deliver packages to houses before their timers expire!</p>"
+    },
+    {
+      title: "🎮 Basic Controls",
+      content: `
+        <ul>
+          <li><strong>Left Click + Drag:</strong> Draw delivery routes</li>
+          <li><strong>Enter:</strong> Complete and start your route</li>
+          <li><strong>Space:</strong> Pause the game</li>
+          <li><strong>ESC:</strong> Open in-game menu</li>
+        </ul>
+      `
+    },
+    {
+      title: "🏠 House Types & Timers",
+      content: `
+        <ul>
+          <li><span class="house-indicator red">🔴 Red Houses:</span> 40 seconds to deliver</li>
+          <li><span class="house-indicator purple">🟣 Purple Houses:</span> 50 seconds to deliver</li>
+          <li><span class="house-indicator green">🟢 Green Houses:</span> 60 seconds to deliver</li>
+        </ul>
+      `
+    },
+    {
+      title: "🚛 Delivery Mechanics",
+      content: "<p>Drive your truck close to houses to deliver packages. The truck's service radius determines how close you need to get.</p>"
+    },
+    {
+      title: "📈 Weekly Progression",
+      content: `
+        <ul>
+          <li><strong>Weeks 1-5:</strong> 3 houses per week</li>
+          <li><strong>Week 6+:</strong> 5 houses per week</li>
+          <li><strong>End of Week:</strong> Choose upgrades to improve your truck</li>
+        </ul>
+      `
+    },
+    {
+      title: "⚡ Available Upgrades",
+      content: `
+        <ul>
+          <li><strong>Tuned Engine:</strong> Increase truck speed (5%, 12%, 15%, 20%)</li>
+          <li><strong>Service Radius+:</strong> Larger delivery area</li>
+          <li><strong>Dispatch Optimizer:</strong> Faster route cooldown</li>
+          <li><strong>Time Master:</strong> More time per week</li>
+        </ul>
+      `
+    },
+    {
+      title: "💡 Pro Tips",
+      content: `
+        <ul>
+          <li>Draw efficient loops that hit multiple houses</li>
+          <li>Prioritize red houses (shortest timers)</li>
+          <li>Use pause (Space) to plan your routes</li>
+          <li>Route cooldown prevents rapid route changes</li>
+        </ul>
+      `
+    }
+  ];
+
+  currentFlashcard = 0;
+
+  updateFlashcard() {
+    const flashcard = this.tutorialFlashcards[this.currentFlashcard];
+    const titleElement = document.getElementById('flashcard-title');
+    const bodyElement = document.getElementById('flashcard-body');
+    
+    if (titleElement && bodyElement) {
+      titleElement.textContent = flashcard.title;
+      bodyElement.innerHTML = flashcard.content;
+    }
+  }
+
+  updateProgress() {
+    const progressText = document.getElementById('tutorial-progress-text');
+    const progressFill = document.getElementById('tutorial-progress-fill');
+    const prevBtn = document.getElementById('prev-flashcard-btn');
+    const nextBtn = document.getElementById('next-flashcard-btn');
+    
+    if (progressText) {
+      progressText.textContent = `${this.currentFlashcard + 1} / ${this.tutorialFlashcards.length}`;
+    }
+    
+    if (progressFill) {
+      const progress = ((this.currentFlashcard + 1) / this.tutorialFlashcards.length) * 100;
+      progressFill.style.width = `${progress}%`;
+    }
+    
+    // Show/hide previous button
+    if (prevBtn) {
+      prevBtn.style.display = this.currentFlashcard > 0 ? 'block' : 'none';
+    }
+    
+    // Update next button text
+    if (nextBtn) {
+      nextBtn.textContent = this.currentFlashcard < this.tutorialFlashcards.length - 1 ? 'Next →' : 'Start Game';
+    }
+  }
+
+  nextFlashcard() {
+    if (this.currentFlashcard < this.tutorialFlashcards.length - 1) {
+      this.currentFlashcard++;
+      this.updateFlashcard();
+      this.updateProgress();
+    } else {
+      // Last flashcard - start the game
+      this.hideTutorialFlashcards();
+      this.startGame();
+    }
+  }
+
+  prevFlashcard() {
+    if (this.currentFlashcard > 0) {
+      this.currentFlashcard--;
+      this.updateFlashcard();
+      this.updateProgress();
     }
   }
 

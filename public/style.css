@@ -1584,3 +1584,343 @@ code {
   background: rgba(148, 163, 184, 0.2);
 }
 
+/* Tutorial Prompt Styles */
+.tutorial-prompt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1003;
+  backdrop-filter: blur(8px);
+}
+
+.tutorial-prompt {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-radius: 24px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(59, 130, 246, 0.1);
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+
+.tutorial-prompt-header {
+  padding: 2rem 2rem 1rem 2rem;
+  text-align: center;
+  border-bottom: 2px solid rgba(59, 130, 246, 0.2);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(30, 41, 59, 0.2));
+  border-radius: 24px 24px 0 0;
+}
+
+.tutorial-prompt-header h2 {
+  color: #f1f5f9;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.tutorial-prompt-content {
+  padding: 2rem;
+  text-align: center;
+}
+
+.tutorial-prompt-content p {
+  color: #e2e8f0;
+  font-size: 1.1rem;
+  margin: 0 0 2rem 0;
+  line-height: 1.6;
+}
+
+.tutorial-prompt-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.tutorial-prompt-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border: none;
+  min-width: 150px;
+  justify-content: center;
+}
+
+.tutorial-prompt-btn.primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.tutorial-prompt-btn.primary:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.tutorial-prompt-btn.secondary {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+.tutorial-prompt-btn.secondary:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(107, 114, 128, 0.4);
+}
+
+/* Tutorial Flashcards Styles */
+.tutorial-flashcards-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1004;
+  backdrop-filter: blur(8px);
+}
+
+.tutorial-flashcards {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-radius: 24px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(59, 130, 246, 0.1);
+  backdrop-filter: blur(10px);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.tutorial-flashcards-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 2px solid rgba(59, 130, 246, 0.2);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(30, 41, 59, 0.2));
+  border-radius: 24px 24px 0 0;
+}
+
+.tutorial-progress {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.tutorial-progress-text {
+  color: #f1f5f9;
+  font-size: 1rem;
+  font-weight: 600;
+  min-width: 60px;
+}
+
+.tutorial-progress-bar {
+  width: 200px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.tutorial-progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  width: 14.28%; /* 1/7 */
+}
+
+.close-tutorial-flashcards-btn {
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  color: #f1f5f9;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: all 0.3s ease;
+  font-size: 1.2rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-tutorial-flashcards-btn:hover {
+  background: rgba(148, 163, 184, 0.2);
+  transform: scale(1.1);
+}
+
+.tutorial-flashcard {
+  flex: 1;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.3), rgba(51, 65, 85, 0.2));
+}
+
+.flashcard-content {
+  text-align: center;
+  max-width: 500px;
+}
+
+.flashcard-title {
+  color: #60a5fa;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.flashcard-body {
+  color: #e2e8f0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.flashcard-body p {
+  margin: 0 0 1rem 0;
+}
+
+.flashcard-body ul {
+  text-align: left;
+  padding-left: 1.5rem;
+  margin: 0;
+}
+
+.flashcard-body li {
+  margin-bottom: 0.5rem;
+}
+
+.flashcard-body strong {
+  color: #f1f5f9;
+  font-weight: 600;
+}
+
+.house-indicator {
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  margin-right: 0.5rem;
+  display: inline-block;
+}
+
+.house-indicator.red {
+  background: rgba(248, 113, 113, 0.2);
+  color: #f87171;
+}
+
+.house-indicator.purple {
+  background: rgba(168, 85, 247, 0.2);
+  color: #a855f7;
+}
+
+.house-indicator.green {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.tutorial-flashcards-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-top: 2px solid rgba(59, 130, 246, 0.2);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(30, 41, 59, 0.2));
+  border-radius: 0 0 24px 24px;
+}
+
+.tutorial-flashcard-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border: none;
+  min-width: 120px;
+}
+
+.tutorial-flashcard-btn.primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.tutorial-flashcard-btn.primary:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.tutorial-flashcard-btn.secondary {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+.tutorial-flashcard-btn.secondary:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(107, 114, 128, 0.4);
+}
+
+/* Responsive Tutorial */
+@media (max-width: 768px) {
+  .tutorial-prompt {
+    width: 95%;
+  }
+  
+  .tutorial-flashcards {
+    width: 95%;
+  }
+  
+  .tutorial-prompt-buttons {
+    flex-direction: column;
+  }
+  
+  .tutorial-prompt-btn {
+    min-width: 200px;
+  }
+  
+  .tutorial-progress {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .tutorial-progress-bar {
+    width: 150px;
+  }
+  
+  .flashcard-title {
+    font-size: 1.5rem;
+  }
+  
+  .flashcard-body {
+    font-size: 1rem;
+  }
+}
+

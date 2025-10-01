@@ -36,6 +36,18 @@ export function initUI() {
   state.speedBtn = document.querySelector('[data-action=speed]');
   state.pauseIcon = document.querySelector('[data-ui=pause-icon]');
   state.speedLabel = document.querySelector('[data-ui=speed-label]');
+  
+  // Initialize UI scaling for different zoom levels
+  adjustUIScaling();
+  
+  // Listen for zoom changes
+  window.addEventListener('resize', () => {
+    // Debounce the resize event
+    clearTimeout(window.uiResizeTimeout);
+    window.uiResizeTimeout = setTimeout(() => {
+      adjustUIScaling();
+    }, 100);
+  });
 
   // Updated selectors for new layout
   state.weekLabel = document.querySelector('[data-ui=week]');
@@ -232,9 +244,21 @@ export function hideUpgradeModal() {
 }
 
 export function selectCard(index) {
-  if (!state.onUpgradeSelect) return;
+  console.log(`[UI] selectCard called with index: ${index}`);
+  console.log(`[UI] Available cards:`, state.currentCards.map(card => card.name));
+  
+  if (!state.onUpgradeSelect) {
+    console.log(`[UI] No upgrade select callback available`);
+    return;
+  }
+  
   const card = state.currentCards[index];
-  if (!card) return;
+  if (!card) {
+    console.log(`[UI] No card found at index ${index}`);
+    return;
+  }
+  
+  console.log(`[UI] Selecting card: ${card.name} (${card.id})`);
   state.onUpgradeSelect(card, index);
 }
 
@@ -650,4 +674,54 @@ export function updateWebGPUPerformanceStats(stats) {
   
   state.webgpuStatus.textContent = `WebGPU Active (${fps}fps)`;
   state.webgpuWrap.title = `WebGPU Performance: ${fps} FPS, GPU Time: ${gpuTime}ms`;
+}
+
+// UI Scaling function to handle different zoom levels
+function adjustUIScaling() {
+  // Reset all transforms first
+  const statsColumn = document.querySelector('.stats-column');
+  const controlPanel = document.querySelector('.control-panel');
+  const gameElements = document.querySelector('.game-elements');
+  
+  if (statsColumn) {
+    statsColumn.style.transform = 'scale(1)';
+  }
+  
+  if (controlPanel) {
+    controlPanel.style.transform = 'scale(1)';
+  }
+  
+  if (gameElements) {
+    gameElements.style.transform = 'scale(1)';
+  }
+  
+  // Get zoom level using multiple methods for better accuracy
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const screenWidth = window.screen.width;
+  const windowWidth = window.innerWidth;
+  const zoomLevel = Math.round((screenWidth / windowWidth) * 100) / 100;
+  
+  console.log(`[UI] Zoom detection - devicePixelRatio: ${devicePixelRatio}, calculated zoom: ${zoomLevel}`);
+  
+  // Only apply scaling if we're significantly away from 100% zoom
+  if (Math.abs(zoomLevel - 1.0) > 0.05) {
+    // Calculate scale factor to compensate for zoom
+    const scaleFactor = 1.0 / zoomLevel;
+    
+    if (statsColumn) {
+      statsColumn.style.transform = `scale(${scaleFactor})`;
+    }
+    
+    if (controlPanel) {
+      controlPanel.style.transform = `scale(${scaleFactor})`;
+    }
+    
+    if (gameElements) {
+      gameElements.style.transform = `scale(${scaleFactor})`;
+    }
+    
+    console.log(`[UI] Applied scaling for zoom level ${zoomLevel}: scale factor ${scaleFactor.toFixed(2)}`);
+  } else {
+    console.log(`[UI] No scaling needed - browser is at 100% zoom`);
+  }
 }

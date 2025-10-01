@@ -96,6 +96,25 @@ export function beginRouteDraw() {
   state.drawingPoints.length = 0;
   state.previewLine.visible = true;
   state.previewMaterial.color.setHex(OPEN_COLOR);
+  console.log("[ROUTE] beginRouteDraw called - mode set to drawing");
+}
+
+// Function to ensure drawing state is maintained
+export function ensureDrawingState() {
+  if (state.mode !== "drawing" && state.drawingPoints.length > 0) {
+    console.log("[ROUTE] Restoring drawing state - was", state.mode, "with", state.drawingPoints.length, "points");
+    state.mode = "drawing";
+    state.previewLine.visible = true;
+    state.previewMaterial.color.setHex(OPEN_COLOR);
+  }
+}
+
+// Function to force drawing state - use as last resort
+export function forceDrawingState() {
+  console.log("[ROUTE] Force enabling drawing state");
+  state.mode = "drawing";
+  state.previewLine.visible = true;
+  state.previewMaterial.color.setHex(OPEN_COLOR);
 }
 
 export function finishRouteDraw() {
@@ -106,20 +125,29 @@ export function finishRouteDraw() {
 }
 
 export function updateRouteDraw(worldPoint, force = false) {
-  if (state.mode !== "drawing") return;
-  if (!worldPoint) return;
+  if (state.mode !== "drawing") {
+    console.log(`[ROUTE] updateRouteDraw blocked - mode is ${state.mode}, not drawing`);
+    return false;
+  }
+  if (!worldPoint) {
+    console.log(`[ROUTE] updateRouteDraw blocked - no world point`);
+    return false;
+  }
 
   const point = new Vector3(worldPoint.x, 0, worldPoint.z);
   const last = state.drawingPoints[state.drawingPoints.length - 1];
   const minDist = state.minSampleDist;
 
   if (!last || force || last.distanceToSquared(point) >= minDist * minDist) {
-    if (state.drawingPoints.length >= state.config.MAX_POINTS) {
-      return;
-    }
+    // NO LIMITS - allow truly infinite drawing
+    // Just add the point without any restrictions
     state.drawingPoints.push(point);
     refreshPreview();
+    console.log(`[ROUTE] Added point ${state.drawingPoints.length} (infinite drawing enabled)`);
+    return true;
   }
+  
+  return true; // Point was too close, but that's not a failure
 }
 
 export function beginRMBRouteDraw(startPoint) {
@@ -140,9 +168,7 @@ export function updateRMBRouteDraw(worldPoint, force = false) {
   const minDist = state.minSampleDist;
 
   if (!last || force || last.distanceToSquared(point) >= minDist * minDist) {
-    if (state.rmbDrawingPoints.length >= state.config.MAX_POINTS) {
-      return;
-    }
+    // NO LIMITS for RMB drawing either - truly infinite
     state.rmbDrawingPoints.push(point);
     refreshRMBPreview();
   }

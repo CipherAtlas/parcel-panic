@@ -92,12 +92,21 @@ const UPGRADE_POOL = [
 
 export function generateChoices(rng, takenSet = new Set(), count = 3, gameState = null) {
   const candidates = UPGRADE_POOL.filter((card) => {
+    // Only filter out non-stackable upgrades that have been taken
     if (!card.stackable && takenSet.has(card.id)) return false;
+    // Check for any conditions that might prevent selection
     if (card.condition && gameState && !card.condition(gameState)) return false;
     return true;
   });
 
+  console.log(`[UPGRADES] Generated ${candidates.length} candidates from ${UPGRADE_POOL.length} total upgrades`);
+  console.log(`[UPGRADES] Taken upgrades:`, Array.from(takenSet));
+  
   const available = candidates.slice();
   rng.shuffle(available);
-  return available.slice(0, count);
+  const selected = available.slice(0, count);
+  
+  console.log(`[UPGRADES] Selected upgrades:`, selected.map(card => card.name));
+  
+  return selected;
 }

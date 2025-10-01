@@ -24,7 +24,7 @@ export const CONFIG = {
   RDP_EPS: 0,
   LINE_WIDTH: 3,
   ROUTE_ATTACH_RADIUS: 8,
-  MAX_POINTS: 400,
+  MAX_POINTS: Infinity, // No limits - truly infinite drawing
   MIN_SAMPLE_DIST: 0.35,
   BASE_SPEED: 9,
   DELIVERY_RADIUS: 2.0,
@@ -532,9 +532,18 @@ function enterUpgradePhase() {
 }
 
 function applyUpgradeCard(card) {
-  if (!card) return;
+  console.log(`[UPGRADE] applyUpgradeCard called with:`, card);
+  
+  if (!card) {
+    console.log(`[UPGRADE] No card provided`);
+    return;
+  }
+  
+  console.log(`[UPGRADE] Applying upgrade: ${card.name} (${card.id})`);
   card.apply(state);
   state.takenUpgrades.add(card.id);
+  
+  console.log(`[UPGRADE] Upgrade applied successfully. Taken upgrades:`, Array.from(state.takenUpgrades));
   
   // Update UI with new truck stats
   ui.setTruckSpeed(state.truck.baseSpeed);
@@ -576,7 +585,9 @@ function restartRun(seed) {
 }
 
 function beginRouteEditing() {
-  if (state.mode !== "run") return;
+  // Allow route editing even when paused - drawing should work regardless of game state
+  // Only check if we're not in game over or upgrade mode
+  if (state.mode === "gameover" || state.mode === "upgrade") return;
   
   // Check if route cooldown is active
   if (state.routeCooldown > 0) {
@@ -587,19 +598,27 @@ function beginRouteEditing() {
   
   route.beginRouteDraw();
   state.routeActive = true;
+  console.log("[ROUTE] Started route editing (mode:", state.mode, ", paused:", state.paused, ")");
 }
 
 
 function wireInputHandlers() {
   input.on("pointer-down", (payload) => {
-    if (state.mode !== "run") return;
+    // Allow drawing even when paused - only block in game over or upgrade mode
+    if (state.mode === "gameover" || state.mode === "upgrade") return;
     
     if (payload.button === 0) {
       // Left mouse button - start new route or continue existing
-      beginRouteEditing();
-      const world = pointerToWorld(payload);
-      if (world) {
-        route.updateRouteDraw(world, true);
+      // Check if we can start drawing (not in cooldown)
+      if (state.routeCooldown <= 0) {
+        beginRouteEditing();
+        const world = pointerToWorld(payload);
+        if (world) {
+          route.updateRouteDraw(world, true);
+        }
+      } else {
+        console.log("[ROUTE] Cannot start drawing - cooldown active");
+        ui.showRouteCooldownMessage(state.routeCooldown);
       }
     }
   });
@@ -609,9 +628,31 @@ function wireInputHandlers() {
     
     const world = pointerToWorld(payload);
     if (world) {
-      if (state.routeActive) {
-        route.updateRouteDraw(world);
+      // Allow drawing even when paused - drawing should work regardless of game state
+      // Only check for route cooldown, not game mode or pause state
+      if (state.routeCooldown <= 0) {
+        // If not already drawing, start drawing
+        if (!state.routeActive) {
+          beginRouteEditing();
+        }
+        
+        // Ensure drawing state is maintained
+        route.ensureDrawingState();
+        
+        // Try to update route drawing
+        const success = route.updateRouteDraw(world);
+        
+        // If drawing failed, force the drawing state and try again
+        if (!success && state.routeActive) {
+          console.log("[ROUTE] Drawing failed, forcing drawing state");
+          route.forceDrawingState();
+          route.updateRouteDraw(world);
+        }
+      } else {
+        console.log(`[ROUTE] Drawing blocked - route cooldown: ${state.routeCooldown.toFixed(1)}s`);
       }
+    } else {
+      console.log(`[ROUTE] Drawing blocked - no world point (pointer: ${payload.x}, ${payload.y})`);
     }
   });
 

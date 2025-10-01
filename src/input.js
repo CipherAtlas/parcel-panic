@@ -11,7 +11,7 @@ const pointer = {
 };
 const pressedKeys = new Set();
 const onceKeys = new Set();
-const SAMPLE_DIST = 4;
+const SAMPLE_DIST = 2; // Reduced for more responsive drawing
 let canvasRef = null;
 
 export function initInput(canvas) {
